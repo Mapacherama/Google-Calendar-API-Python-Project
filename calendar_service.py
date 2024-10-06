@@ -2,6 +2,7 @@ import time
 from googleapiclient.discovery import build
 from auth import authenticate_google_calendar
 from win10toast_click import ToastNotifier
+from typing import Optional
 
 toaster = ToastNotifier()
 
