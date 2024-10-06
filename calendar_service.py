@@ -51,27 +51,26 @@ def create_event(summary: str, description: str, start_time: str, end_time: str)
 
     return event
 
-def update_event(event_id: str, summary: str, description: str, start_time: str, end_time: str):
+def update_event(event_id: str, summary: Optional[str] = None, description: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None):
     service = get_calendar_service()
-    event = {
-        'summary': summary,
-        'description': description,
-        'start': {
-            'dateTime': start_time,
-            'timeZone': 'Europe/Amsterdam',
-        },
-        'end': {
-            'dateTime': end_time,
-            'timeZone': 'Europe/Amsterdam',
-        },
-    }
+    event = service.events().get(calendarId='primary', eventId=event_id).execute()
+
+    if summary:
+        event['summary'] = summary
+    if description:
+        event['description'] = description
+    if start_time:
+        event['start'] = {'dateTime': start_time, 'timeZone': 'Europe/Amsterdam'}
+    if end_time:
+        event['end'] = {'dateTime': end_time, 'timeZone': 'Europe/Amsterdam'}
+
     updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
 
     toaster.show_toast(
         "Event Updated", 
-        f"{summary} on {start_time}", 
+        f"{event['summary']} on {event['start']['dateTime']}", 
         duration=5, 
-        callback_on_click=lambda: snooze_notification(summary)
+        callback_on_click=lambda: snooze_notification(event['summary'])
     )
 
     return {"message": "Event updated", "updated_event": updated_event}
