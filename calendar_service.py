@@ -27,13 +27,32 @@ def create_event(summary: str, description: str, start_time: str, end_time: str)
         'description': description,
         'start': {
             'dateTime': start_time,
-            'timeZone': 'Europe/Amsterdam', 
+            'timeZone': 'Europe/Amsterdam',
         },
         'end': {
             'dateTime': end_time,
-            'timeZone': 'Europe/Amsterdam',  
+            'timeZone': 'Europe/Amsterdam',
         },
     }
 
     event = service.events().insert(calendarId='primary', body=event).execute()
     return event
+
+def update_event(event_id: str, summary: str, description: str, start_time: str, end_time: str):
+    service = get_calendar_service()
+
+    event = {
+        'summary': summary,
+        'description': description,
+        'start': {
+            'dateTime': start_time,
+            'timeZone': 'Europe/Amsterdam',
+        },
+        'end': {
+            'dateTime': end_time,
+            'timeZone': 'Europe/Amsterdam',
+        },
+    }
+
+    updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
+    return {"message": "Event updated", "updated_event": updated_event}
