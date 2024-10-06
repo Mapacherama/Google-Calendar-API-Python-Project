@@ -27,11 +27,11 @@ def create_event(summary: str, description: str, start_time: str, end_time: str)
         'description': description,
         'start': {
             'dateTime': start_time,
-            'timeZone': 'America/Los_Angeles',
+            'timeZone': 'Europe/Amsterdam', 
         },
         'end': {
             'dateTime': end_time,
-            'timeZone': 'America/Los_Angeles',
+            'timeZone': 'Europe/Amsterdam',  
         },
     }
 
