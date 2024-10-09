@@ -40,3 +40,10 @@ if __name__ == "__main__":
 def remove_event(event_id: str):
     result = delete_event(event_id)
     return result
+
+@app.post("/add-historical-event", summary="Add Historical Event", tags=["Calendar"])
+def add_historical_event():
+    event = add_historical_event_to_calendar()
+    if "message" in event:
+        return {"message": event["message"]}
+    return {"message": "Historical event added", "event": event}
