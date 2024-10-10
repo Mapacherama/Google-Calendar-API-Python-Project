@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from typing import Optional
-from calendar_service import list_upcoming_events, create_event, update_event, delete_event
+from calendar_service import add_historical_event_to_calendar, list_upcoming_events, create_event, update_event, delete_event
 
 app = FastAPI()
 
