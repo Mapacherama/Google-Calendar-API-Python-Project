@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from typing import Optional
-from calendar_service import add_historical_event_to_calendar, list_upcoming_events, create_event, update_event, delete_event
+from calendar_service import add_historical_event_to_calendar, add_manga_chapter_to_calendar, list_upcoming_events, create_event, update_event, delete_event
 
 app = FastAPI()
 
@@ -47,3 +47,10 @@ def add_historical_event():
     if "message" in event:
         return {"message": event["message"]}
     return {"message": "Historical event added", "event": event}
+
+@app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
+def add_mangadex_chapter(manga_title: str):
+    result = add_manga_chapter_to_calendar(manga_title)
+    if "message" in result:
+        return {"message": result["message"]}
+    return {"message": "Manga chapter event added", "event": result}
