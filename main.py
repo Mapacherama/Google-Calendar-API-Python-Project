@@ -1,6 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from typing import Optional
-from calendar_service import add_historical_event_to_calendar, add_manga_chapter_to_calendar, list_upcoming_events, create_event, update_event, delete_event
+from calendar_service import (
+    add_historical_event_to_calendar, 
+    add_manga_chapter_to_calendar, 
+    list_upcoming_events, 
+    create_event, 
+    update_event, 
+    delete_event
+)
+from auth import authenticate_google_calendar
 
 app = FastAPI()
 
@@ -32,10 +40,6 @@ def modify_event(
     updated_event = update_event(event_id, summary, description, start_time, end_time)
     return {"message": "Event updated", "updated_event": updated_event}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=7000, reload=True)
-
 @app.delete("/delete-event/{event_id}", summary="Delete Event", tags=["Calendar"])
 def remove_event(event_id: str):
     result = delete_event(event_id)
@@ -54,3 +58,16 @@ def add_mangadex_chapter(manga_title: str):
     if "message" in result:
         return {"message": result["message"]}
     return {"message": "Manga chapter event added", "event": result}
+
+# New authentication endpoint for Google Calendar
+@app.get("/authenticate", summary="Authenticate Google Calendar", tags=["Auth"])
+def google_calendar_authenticate():
+    creds = authenticate_google_calendar()
+    if creds:
+        return {"message": "Authentication successful, token.json created"}
+    else:
+        raise HTTPException(status_code=401, detail="Authentication failed")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=7000, reload=True)
