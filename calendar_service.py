@@ -10,22 +10,24 @@ import os
 
 toaster = ToastNotifier()
 
+# Load the Twilio account details and phone numbers from environment variables
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER") 
-USER_WHATSAPP_NUMBER = os.getenv("USER_WHATSAPP_NUMBER")  
+TWILIO_SMS_NUMBER = os.getenv("TWILIO_SMS_NUMBER") 
+USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER")  
 
-def send_whatsapp_notification(message_body):
+# Function to send SMS notification
+def send_sms_notification(message_body):
     try:
         client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         message = client.messages.create(
             body=message_body,
-            from_=f"whatsapp:{TWILIO_WHATSAPP_NUMBER}",
-            to=f"whatsapp:{USER_WHATSAPP_NUMBER}"
+            from_=TWILIO_SMS_NUMBER,  
+            to=USER_PHONE_NUMBER       
         )
-        print(f"WhatsApp message sent successfully! SID: {message.sid}")
+        print(f"SMS sent successfully! SID: {message.sid}")
     except Exception as e:
-        print(f"Failed to send WhatsApp message: {e}")
+        print(f"Failed to send SMS: {e}")
 
 def snooze_notification(summary, delay=600):
     time.sleep(delay)
@@ -183,9 +185,8 @@ def add_manga_chapter_to_calendar(manga_title: str):
     end_time = datetime.now().strftime("%Y-%m-%dT11:00:00")
 
     event = create_event(summary, description, start_time, end_time)
+    
+    sms_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
+    send_sms_notification(sms_body)
 
-    # Send WhatsApp notification
-    whatsapp_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
-    send_whatsapp_notification(whatsapp_body)
-
-    return {"message": "Manga chapter event added and WhatsApp notification sent.", "event": event}
+    return {"message": "Manga chapter event added and SMS notification sent.", "event": event}
