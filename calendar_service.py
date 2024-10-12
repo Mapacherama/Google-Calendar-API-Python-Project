@@ -5,8 +5,27 @@ from win10toast_click import ToastNotifier
 from typing import Optional
 import requests
 from datetime import datetime
+from twilio.rest import Client
+import os
 
 toaster = ToastNotifier()
+
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_WHATSAPP_NUMBER = os.getenv("TWILIO_WHATSAPP_NUMBER") 
+USER_WHATSAPP_NUMBER = os.getenv("USER_WHATSAPP_NUMBER")  
+
+def send_whatsapp_notification(message_body):
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        message = client.messages.create(
+            body=message_body,
+            from_=f"whatsapp:{TWILIO_WHATSAPP_NUMBER}",
+            to=f"whatsapp:{USER_WHATSAPP_NUMBER}"
+        )
+        print(f"WhatsApp message sent successfully! SID: {message.sid}")
+    except Exception as e:
+        print(f"Failed to send WhatsApp message: {e}")
 
 def snooze_notification(summary, delay=600):
     time.sleep(delay)
@@ -164,4 +183,9 @@ def add_manga_chapter_to_calendar(manga_title: str):
     end_time = datetime.now().strftime("%Y-%m-%dT11:00:00")
 
     event = create_event(summary, description, start_time, end_time)
-    return {"message": "Manga chapter event added", "event": event}
+
+    # Send WhatsApp notification
+    whatsapp_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
+    send_whatsapp_notification(whatsapp_body)
+
+    return {"message": "Manga chapter event added and WhatsApp notification sent.", "event": event}
