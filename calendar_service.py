@@ -1,33 +1,50 @@
 import time
+from fastapi import HTTPException
 from googleapiclient.discovery import build
 from auth import authenticate_google_calendar
 from win10toast_click import ToastNotifier
 from typing import Optional
 import requests
 from datetime import datetime
-from twilio.rest import Client
+import vonage
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 toaster = ToastNotifier()
 
-# Load the Twilio account details and phone numbers from environment variables
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_SMS_NUMBER = os.getenv("TWILIO_SMS_NUMBER") 
-USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER")  
+SENDER_NAME = "EventNotifier"
 
-# Function to send SMS notification
-def send_sms_notification(message_body):
+VONAGE_API_KEY = os.getenv("VONAGE_API_KEY")
+VONAGE_API_SECRET = os.getenv("VONAGE_API_SECRET")
+USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER") 
+
+client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
+sms = vonage.Sms(client)
+
+def send_sms_notification(sms_body):
+    print(f"API Key: {VONAGE_API_KEY}")
+    print(f"API Secret: {VONAGE_API_SECRET}")
+    print(f"Phone Number: {USER_PHONE_NUMBER}")
+
     try:
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        message = client.messages.create(
-            body=message_body,
-            from_=TWILIO_SMS_NUMBER,  
-            to=USER_PHONE_NUMBER       
+        responseData = sms.send_message(
+            {
+                "from": SENDER_NAME,
+                "to": USER_PHONE_NUMBER,
+                "text": sms_body,
+            }
         )
-        print(f"SMS sent successfully! SID: {message.sid}")
+
+        if responseData["messages"][0]["status"] == "0":
+            print("SMS sent successfully.")
+        else:
+            print(f"Message failed with error: {responseData['messages'][0]['error-text']}")
+            raise HTTPException(status_code=500, detail="Failed to send SMS")
     except Exception as e:
         print(f"Failed to send SMS: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send SMS")
 
 def snooze_notification(summary, delay=600):
     time.sleep(delay)
