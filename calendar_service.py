@@ -5,7 +5,7 @@ from auth import authenticate_google_calendar
 from win10toast_click import ToastNotifier
 from typing import Optional
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import vonage
 import os
 from dotenv import load_dotenv
@@ -15,28 +15,20 @@ load_dotenv()
 toaster = ToastNotifier()
 
 SENDER_NAME = "EventNotifier"
-
 VONAGE_API_KEY = os.getenv("VONAGE_API_KEY")
 VONAGE_API_SECRET = os.getenv("VONAGE_API_SECRET")
-USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER") 
+USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER")
 
 client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
 sms = vonage.Sms(client)
 
 def send_sms_notification(sms_body):
-    print(f"API Key: {VONAGE_API_KEY}")
-    print(f"API Secret: {VONAGE_API_SECRET}")
-    print(f"Phone Number: {USER_PHONE_NUMBER}")
-
     try:
-        responseData = sms.send_message(
-            {
-                "from": SENDER_NAME,
-                "to": USER_PHONE_NUMBER,
-                "text": sms_body,
-            }
-        )
-
+        responseData = sms.send_message({
+            "from": SENDER_NAME,
+            "to": USER_PHONE_NUMBER,
+            "text": sms_body,
+        })
         if responseData["messages"][0]["status"] == "0":
             print("SMS sent successfully.")
         else:
@@ -52,8 +44,7 @@ def snooze_notification(summary, delay=600):
 
 def get_calendar_service():
     creds = authenticate_google_calendar()
-    service = build('calendar', 'v3', credentials=creds)
-    return service
+    return build('calendar', 'v3', credentials=creds)
 
 def list_upcoming_events():
     service = get_calendar_service()
@@ -73,7 +64,6 @@ def create_event(summary: str, description: str, start_time: str, end_time: str,
         'location': 'Online',
         'description': description,
     }
-
     if is_all_day:
         event['start'] = {'date': start_time}
         event['end'] = {'date': end_time}
@@ -86,16 +76,13 @@ def create_event(summary: str, description: str, start_time: str, end_time: str,
             'dateTime': end_time,
             'timeZone': 'Europe/Amsterdam',
         }
-
     event = service.events().insert(calendarId='primary', body=event).execute()
-
     toaster.show_toast(
         "Event Created", 
         f"{summary} on {start_time}", 
         duration=5, 
         callback_on_click=lambda: snooze_notification(summary)
     )
-
     return event
 
 def update_event(event_id: str, summary: Optional[str] = None, description: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None):
@@ -112,33 +99,29 @@ def update_event(event_id: str, summary: Optional[str] = None, description: Opti
         event['end'] = {'dateTime': end_time, 'timeZone': 'Europe/Amsterdam'}
 
     updated_event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
-
     toaster.show_toast(
         "Event Updated", 
         f"{event['summary']} on {event['start']['dateTime']}", 
         duration=5, 
         callback_on_click=lambda: snooze_notification(event['summary'])
     )
-
     return {"message": "Event updated", "updated_event": updated_event}
 
 def delete_event(event_id: str):
     service = get_calendar_service()
     try:
         service.events().delete(calendarId='primary', eventId=event_id).execute()
-
         toaster.show_toast(
             "Event Deleted", 
             f"Event ID {event_id} deleted", 
             duration=5, 
             callback_on_click=lambda: snooze_notification("Deleted Event")
         )
-
         return {"message": f"Event with ID {event_id} deleted successfully"}
     except Exception as e:
         return {"error": f"An error occurred: {e}"}
 
-def add_historical_event_to_calendar():
+def add_historical_event_to_calendar(start_time: str, end_time: str):
     today = datetime.now().strftime("%m/%d")
     url = f"http://history.muffinlabs.com/date/{today}"
     response = requests.get(url)
@@ -153,10 +136,8 @@ def add_historical_event_to_calendar():
 
     summary = f"Historical Event: {event_text} ({year})"
     description = f"This event happened on this day in {year}: {event_text}"
-    start_time = datetime.now().strftime("%Y-%m-%d")
-    end_time = start_time
 
-    event = create_event(summary, description, start_time, end_time, is_all_day=True)
+    event = create_event(summary, description, start_time, end_time)
     return event
 
 def search_manga(title: str):
@@ -187,7 +168,7 @@ def get_latest_manga_chapter(manga_id: str):
 
     return {"chapter_title": chapter_title, "chapter_url": chapter_url}
 
-def add_manga_chapter_to_calendar(manga_title: str):
+def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str):
     manga_info = search_manga(manga_title)
     if "message" in manga_info:
         return {"message": manga_info["message"]}
@@ -198,8 +179,6 @@ def add_manga_chapter_to_calendar(manga_title: str):
 
     summary = f"New Chapter of {manga_info['title']} Available!"
     description = f"Read the latest chapter here: {chapter_info['chapter_url']}"
-    start_time = datetime.now().strftime("%Y-%m-%dT10:00:00")
-    end_time = datetime.now().strftime("%Y-%m-%dT11:00:00")
 
     event = create_event(summary, description, start_time, end_time)
     
@@ -207,3 +186,67 @@ def add_manga_chapter_to_calendar(manga_title: str):
     send_sms_notification(sms_body)
 
     return {"message": "Manga chapter event added and SMS notification sent.", "event": event}
+
+def get_mindfulness_quote():
+    try:
+        response = requests.get("http://mindfully-api.us-east-2.elasticbeanstalk.com/api/category/mindfulness")
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                return data[0]['text']
+        return "Stay mindful and positive!"
+    except Exception as e:
+        print(f"Error fetching quote: {e}")
+        return "Stay mindful and positive!"
+    
+def get_motivational_quote():
+    try:
+        response = requests.get("https://zenquotes.io/api/random")
+        if response.status_code == 200:
+            data = response.json()
+            quote = data[0]['q']
+            author = data[0]['a']
+            return f"{quote} - {author}"
+        else:
+            return "Unable to fetch a quote at the moment."
+    except Exception as e:
+        print(f"Error fetching quote: {e}")
+        return "Stay inspired and keep pushing!"
+
+def get_next_airing_episode(anime_title: str):
+    url = "https://graphql.anilist.co"
+    query = """
+    query ($search: String) {
+        Media(search: $search, type: ANIME) {
+            id
+            title {
+                romaji
+                english
+            }
+            nextAiringEpisode {
+                airingAt
+                episode
+            }
+        }
+    }
+    """
+    variables = {"search": anime_title}
+    try:
+        response = requests.post(url, json={'query': query, 'variables': variables})
+        if response.status_code == 200:
+            data = response.json()
+            media = data["data"]["Media"]
+            if not media["nextAiringEpisode"]:
+                return {"message": f"No upcoming episodes found for {anime_title}."}
+            airing_at = media["nextAiringEpisode"]["airingAt"]
+            episode = media["nextAiringEpisode"]["episode"]
+            return {
+                "title": media["title"]["romaji"] or media["title"]["english"],
+                "airing_at": airing_at,
+                "episode": episode
+            }
+        else:
+            return {"message": "Failed to fetch anime details from AniList."}
+    except Exception as e:
+        print(f"Error fetching data: {e}")
+        return {"message": "An error occurred while fetching anime details."} 
