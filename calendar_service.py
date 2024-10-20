@@ -8,6 +8,7 @@ import requests
 from datetime import datetime, timedelta
 import vonage
 import os
+from random import choice
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,13 +58,21 @@ def list_upcoming_events():
     events = events_result.get('items', [])
     return events
 
-def create_event(summary: str, description: str, start_time: str, end_time: str, is_all_day: bool = False):
+def create_event(
+    summary: str, 
+    description: str, 
+    start_time: str, 
+    end_time: str, 
+    reminder_minutes: int, 
+    is_all_day: bool = False
+):
     service = get_calendar_service()
     event = {
         'summary': summary,
         'location': 'Online',
         'description': description,
     }
+
     if is_all_day:
         event['start'] = {'date': start_time}
         event['end'] = {'date': end_time}
@@ -76,13 +85,21 @@ def create_event(summary: str, description: str, start_time: str, end_time: str,
             'dateTime': end_time,
             'timeZone': 'Europe/Amsterdam',
         }
+
+    event['reminders'] = {
+        'useDefault': False,
+        'overrides': [{'method': 'popup', 'minutes': reminder_minutes}]
+    }
+
     event = service.events().insert(calendarId='primary', body=event).execute()
+
     toaster.show_toast(
         "Event Created", 
         f"{summary} on {start_time}", 
         duration=5, 
         callback_on_click=lambda: snooze_notification(summary)
     )
+
     return event
 
 def update_event(event_id: str, summary: Optional[str] = None, description: Optional[str] = None, start_time: Optional[str] = None, end_time: Optional[str] = None):
@@ -121,7 +138,9 @@ def delete_event(event_id: str):
     except Exception as e:
         return {"error": f"An error occurred: {e}"}
 
-def add_historical_event_to_calendar(start_time: str, end_time: str):
+from random import choice
+
+def add_historical_event_to_calendar(start_time: str, end_time: str, random_fact: bool = False):
     today = datetime.now().strftime("%m/%d")
     url = f"http://history.muffinlabs.com/date/{today}"
     response = requests.get(url)
@@ -130,7 +149,12 @@ def add_historical_event_to_calendar(start_time: str, end_time: str):
     if not data or "data" not in data or "Events" not in data["data"]:
         return {"message": "No historical events found for today."}
 
-    event_info = data["data"]["Events"][0]
+    if random_fact:
+        all_events = data["data"]["Events"]
+        event_info = choice(all_events)
+    else:
+        event_info = data["data"]["Events"][0]
+
     year = event_info["year"]
     event_text = event_info["text"]
 
@@ -168,12 +192,7 @@ def get_latest_manga_chapter(manga_id: str):
 
     return {"chapter_title": chapter_title, "chapter_url": chapter_url}
 
-def add_manga_chapter_to_calendar(
-    manga_title: str, 
-    start_time: str, 
-    end_time: str, 
-    reminder_minutes: Optional[list[int]] = [30]
-):
+def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str, reminder_minutes: int):
     manga_info = search_manga(manga_title)
     if "message" in manga_info:
         return {"message": manga_info["message"]}
@@ -184,8 +203,8 @@ def add_manga_chapter_to_calendar(
 
     summary = f"New Chapter of {manga_info['title']} Available!"
     description = f"Read the latest chapter here: {chapter_info['chapter_url']}"
-    
-    event = create_event(summary, description, start_time, end_time, reminder_minutes=reminder_minutes)
+
+    event = create_event(summary, description, start_time, end_time, reminder_minutes)
     
     sms_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
     send_sms_notification(sms_body)

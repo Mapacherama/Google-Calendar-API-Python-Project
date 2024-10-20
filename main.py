@@ -14,6 +14,7 @@ from calendar_service import (
     delete_event
 )
 from auth import authenticate_google_calendar
+from pytz import timezone
 
 from utils import convert_timestamp_to_iso
 
@@ -52,12 +53,15 @@ def remove_event(event_id: str):
     result = delete_event(event_id)
     return result
 
+from pytz import timezone
+
 @app.post("/add-historical-event", summary="Add Historical Event", tags=["Calendar"])
 def add_historical_event(
-    start_time: str = "2024-10-10T10:00:00-07:00",
-    end_time: str = "2024-10-10T11:00:00-07:00"
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=15)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    random_fact: bool = False
 ):
-    event = add_historical_event_to_calendar(start_time, end_time)
+    event = add_historical_event_to_calendar(start_time, end_time, random_fact)
     if "message" in event:
         return {"message": event["message"]}
     return {"message": "Historical event added", "event": event}
@@ -67,7 +71,7 @@ def add_mangadex_chapter(
     manga_title: str, 
     start_time: str = "2024-10-10T18:00:00-07:00", 
     end_time: str = "2024-10-10T19:00:00-07:00",
-    reminder_minutes: Optional[list[int]] = [30, 15, 10, 5]
+    reminder_minutes: Optional[int] = 10
 ):
     result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes)
     if "message" in result:
@@ -82,13 +86,14 @@ def google_calendar_authenticate():
         return {"message": "Authentication successful, token.json created"}
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
-    
+
 @app.post("/schedule-mindfulness-event", summary="Schedule Mindfulness Event with SMS", tags=["Mindfulness", "Calendar"])
 def schedule_mindfulness_event(
     summary: str = "Mindfulness Reminder", 
     description: Optional[str] = None, 
-    start_time: str = "2024-10-10T10:00:00-07:00", 
-    end_time: str = "2024-10-10T11:00:00-07:00"
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
+    reminder_minutes: int = 10
 ):
     try:
         quote = get_mindfulness_quote()
@@ -96,7 +101,7 @@ def schedule_mindfulness_event(
         if not description:
             description = f"Mindfulness Quote of the Day: {quote}"
         
-        event = create_event(summary, description, start_time, end_time)
+        event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
         sms_body = f"Reminder: {summary}. Quote: {quote}"
         send_sms_notification(sms_body)
