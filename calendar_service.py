@@ -144,8 +144,22 @@ def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_mi
     today = datetime.now().strftime("%m/%d")
     url = f"http://history.muffinlabs.com/date/{today}" if not random_fact else "http://history.muffinlabs.com/random"
     response = requests.get(url)
-    data = response.json()
 
+    print(f"Fetching from URL: {url}")
+    print(f"Response Status Code: {response.status_code}")
+    print(f"Response Text: {response.text}")
+
+    if response.status_code == 200:
+        try:
+            data = response.json()
+        except ValueError:
+            print("Failed to parse JSON")
+            raise HTTPException(status_code=500, detail="Failed to parse response from history API")
+    else:
+        print(f"Error fetching data, Status Code: {response.status_code}")
+        raise HTTPException(status_code=500, detail="Failed to fetch data from history API")
+
+    # Now process the data as before
     if not data or "data" not in data or "Events" not in data["data"]:
         return {"message": "No historical events found."}
 
