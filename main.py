@@ -53,15 +53,14 @@ def remove_event(event_id: str):
     result = delete_event(event_id)
     return result
 
-from pytz import timezone
-
 @app.post("/add-historical-event", summary="Add Historical Event", tags=["Calendar"])
 def add_historical_event(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'),
-    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=15)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    reminder_minutes: Optional[int] = 10,
     random_fact: bool = False
 ):
-    event = add_historical_event_to_calendar(start_time, end_time, random_fact)
+    event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
     if "message" in event:
         return {"message": event["message"]}
     return {"message": "Historical event added", "event": event}

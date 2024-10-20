@@ -140,28 +140,23 @@ def delete_event(event_id: str):
 
 from random import choice
 
-def add_historical_event_to_calendar(start_time: str, end_time: str, random_fact: bool = False):
+def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool):
     today = datetime.now().strftime("%m/%d")
-    url = f"http://history.muffinlabs.com/date/{today}"
+    url = f"http://history.muffinlabs.com/date/{today}" if not random_fact else "http://history.muffinlabs.com/random"
     response = requests.get(url)
     data = response.json()
 
     if not data or "data" not in data or "Events" not in data["data"]:
-        return {"message": "No historical events found for today."}
+        return {"message": "No historical events found."}
 
-    if random_fact:
-        all_events = data["data"]["Events"]
-        event_info = choice(all_events)
-    else:
-        event_info = data["data"]["Events"][0]
-
+    event_info = data["data"]["Events"][0]
     year = event_info["year"]
     event_text = event_info["text"]
 
     summary = f"Historical Event: {event_text} ({year})"
     description = f"This event happened on this day in {year}: {event_text}"
 
-    event = create_event(summary, description, start_time, end_time)
+    event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return event
 
 def search_manga(title: str):
