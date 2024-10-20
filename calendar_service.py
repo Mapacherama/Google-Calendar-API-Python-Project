@@ -8,7 +8,7 @@ import requests
 from datetime import datetime, timedelta
 import vonage
 import os
-from random import choice
+from random import choice, randint
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -140,26 +140,20 @@ def delete_event(event_id: str):
 
 from random import choice
 
-def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool):
-    today = datetime.now().strftime("%m/%d")
-    url = f"http://history.muffinlabs.com/date/{today}" if not random_fact else "http://history.muffinlabs.com/random"
-    response = requests.get(url)
-
-    print(f"Fetching from URL: {url}")
-    print(f"Response Status Code: {response.status_code}")
-    print(f"Response Text: {response.text}")
-
-    if response.status_code == 200:
-        try:
-            data = response.json()
-        except ValueError:
-            print("Failed to parse JSON")
-            raise HTTPException(status_code=500, detail="Failed to parse response from history API")
+def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool = False):
+    if random_fact:
+        month = randint(1, 12)
+        day = randint(1, 28)  # Use 28 to ensure no invalid dates
+        url = f"http://history.muffinlabs.com/date/{month}/{day}"
     else:
-        print(f"Error fetching data, Status Code: {response.status_code}")
-        raise HTTPException(status_code=500, detail="Failed to fetch data from history API")
+        today = datetime.now().strftime("%m/%d")
+        url = f"http://history.muffinlabs.com/date/{today}"
+    
+    response = requests.get(url)
+    if response.status_code != 200:
+        return {"message": "Failed to fetch data from the historical API"}
 
-    # Now process the data as before
+    data = response.json()
     if not data or "data" not in data or "Events" not in data["data"]:
         return {"message": "No historical events found."}
 
