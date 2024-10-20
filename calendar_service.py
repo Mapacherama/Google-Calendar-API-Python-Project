@@ -168,7 +168,12 @@ def get_latest_manga_chapter(manga_id: str):
 
     return {"chapter_title": chapter_title, "chapter_url": chapter_url}
 
-def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str):
+def add_manga_chapter_to_calendar(
+    manga_title: str, 
+    start_time: str, 
+    end_time: str, 
+    reminder_minutes: Optional[list[int]] = [30]
+):
     manga_info = search_manga(manga_title)
     if "message" in manga_info:
         return {"message": manga_info["message"]}
@@ -179,8 +184,8 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
 
     summary = f"New Chapter of {manga_info['title']} Available!"
     description = f"Read the latest chapter here: {chapter_info['chapter_url']}"
-
-    event = create_event(summary, description, start_time, end_time)
+    
+    event = create_event(summary, description, start_time, end_time, reminder_minutes=reminder_minutes)
     
     sms_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
     send_sms_notification(sms_body)

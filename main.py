@@ -66,9 +66,10 @@ def add_historical_event(
 def add_mangadex_chapter(
     manga_title: str, 
     start_time: str = "2024-10-10T18:00:00-07:00", 
-    end_time: str = "2024-10-10T19:00:00-07:00"
+    end_time: str = "2024-10-10T19:00:00-07:00",
+    reminder_minutes: Optional[list[int]] = [30, 15, 10, 5]
 ):
-    result = add_manga_chapter_to_calendar(manga_title, start_time, end_time)
+    result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes)
     if "message" in result:
         return {"message": result["message"]}
     return {"message": "Manga chapter event added", "event": result}
