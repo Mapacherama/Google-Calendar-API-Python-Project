@@ -143,11 +143,13 @@ from random import choice
 def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool = False):
     if random_fact:
         month = randint(1, 12)
-        day = randint(1, 28)  # Use 28 to ensure no invalid dates
+        day = randint(1, 28)
         url = f"http://history.muffinlabs.com/date/{month}/{day}"
+        selected_date = f"{month}/{day}"
     else:
         today = datetime.now().strftime("%m/%d")
         url = f"http://history.muffinlabs.com/date/{today}"
+        selected_date = today
     
     response = requests.get(url)
     if response.status_code != 200:
@@ -160,9 +162,9 @@ def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_mi
     event_info = data["data"]["Events"][0]
     year = event_info["year"]
     event_text = event_info["text"]
-
-    summary = f"Historical Event: {event_text} ({year})"
-    description = f"This event happened on this day in {year}: {event_text}"
+    
+    summary = f"Historical Event on {selected_date}: {event_text} ({year})"
+    description = f"This event happened on {selected_date} in {year}: {event_text}"
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return event
