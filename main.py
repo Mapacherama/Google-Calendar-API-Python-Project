@@ -26,15 +26,15 @@ def get_upcoming_events():
     if not events:
         return {"message": "No upcoming events found"}
     return events
-
 @app.post("/create-event", summary="Create Event", tags=["Calendar"])
 def schedule_event(
-    summary: str, 
-    description: Optional[str] = None, 
-    start_time: str = "2024-10-10T10:00:00-07:00", 
-    end_time: str = "2024-10-10T11:00:00-07:00"
+    summary: str,
+    description: Optional[str] = None,
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    reminder_minutes: int = 10
 ):
-    event = create_event(summary, description, start_time, end_time)
+    event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return {"message": "Event created", "event": event}
 
 @app.put("/update-event/{event_id}", summary="Update Event", tags=["Calendar"])
@@ -117,8 +117,9 @@ def schedule_mindfulness_event(
 def schedule_motivational_event(
     summary: str = "Motivational Reminder", 
     description: Optional[str] = None, 
-    start_time: str = "2024-10-10T10:00:00-07:00", 
-    end_time: str = "2024-10-10T11:00:00-07:00"
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
+    reminder_minutes: int = 10
 ):
     try:
         quote = get_motivational_quote()
@@ -126,7 +127,7 @@ def schedule_motivational_event(
         if not description:
             description = f"Motivational Quote of the Day: {quote}"
         
-        event = create_event(summary, description, start_time, end_time)
+        event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
         sms_body = f"Reminder: {summary}. Quote: {quote}"
         send_sms_notification(sms_body)
