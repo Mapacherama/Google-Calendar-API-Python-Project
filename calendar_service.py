@@ -221,12 +221,14 @@ def get_mindfulness_quote():
         response = requests.get("http://mindfully-api.us-east-2.elasticbeanstalk.com/api/category/mindfulness")
         if response.status_code == 200:
             data = response.json()
-            if data:
-                return data[0]['text']
-        return "Stay mindful and positive!"
+            # Check if data is a list and contains at least one item
+            if isinstance(data, list) and data:
+                # Extract the quote text from the first item
+                return data[0].get('text', "Stay mindful and positive!")
+        return "No mindfulness quotes available at the moment."
     except Exception as e:
         print(f"Error fetching quote: {e}")
-        return "Stay mindful and positive!"
+        return "Error retrieving mindfulness message, please try again later."
     
 def get_motivational_quote():
     try:

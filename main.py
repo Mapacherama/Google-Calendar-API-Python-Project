@@ -144,7 +144,8 @@ def schedule_motivational_event(
 def add_anime_episode(
     anime_title: str, 
     start_time: Optional[str] = None, 
-    end_time: Optional[str] = None
+    end_time: Optional[str] = None,
+    reminder_minutes: int = 10
 ):
     try:
         anime_info = get_next_airing_episode(anime_title)
@@ -158,7 +159,7 @@ def add_anime_episode(
         summary = f"New Episode of {anime_info['title']} (Episode {anime_info['episode']})"
         description = f"The next episode of {anime_info['title']} airs at {airing_date}."
         
-        event = create_event(summary, description, start_time, end_time)
+        event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
         sms_body = f"New Episode Alert: {summary} on {start_time}. Check your calendar for details."
         send_sms_notification(sms_body)
@@ -173,7 +174,7 @@ def add_anime_episode(
             }
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
