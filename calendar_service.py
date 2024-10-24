@@ -217,17 +217,24 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
     return {"message": "Manga chapter event added and SMS notification sent.", "event": event}
 
 def get_mindfulness_quote():
+    url = "https://api.quotable.io/random?tags=wisdom,life"
     try:
-        response = requests.get("http://mindfully-api.us-east-2.elasticbeanstalk.com/api/category/mindfulness")
+        response = requests.get(url, verify=False)
         if response.status_code == 200:
             data = response.json()
-            # Check if data is a list and contains at least one item
-            if isinstance(data, list) and data:
-                # Extract the quote text from the first item
-                return data[0].get('text', "Stay mindful and positive!")
-        return "No mindfulness quotes available at the moment."
+            # Log the received data for debugging
+            print("API response data:", data)
+            # Check if data contains the expected keys
+            if 'content' in data and 'author' in data:
+                quote = data['content']
+                author = data['author']
+                return f"{quote} - {author}"
+            else:
+                return "The quote structure is unexpected."
+        else:
+            return "Failed to retrieve a quote due to a non-200 status code."
     except Exception as e:
-        print(f"Error fetching quote: {e}")
+        print(f"Error retrieving quote: {e}")
         return "Error retrieving mindfulness message, please try again later."
     
 def get_motivational_quote():
