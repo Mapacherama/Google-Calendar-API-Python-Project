@@ -138,7 +138,29 @@ def delete_event(event_id: str):
     except Exception as e:
         return {"error": f"An error occurred: {e}"}
 
-from random import choice
+def get_movies_with_high_ratings(
+    min_rating: float = 7.0,
+    vote_count: int = 50,
+    release_start: str = '1990-01-01',
+    release_end: str = '1999-12-31'
+):
+    url = f"{BASE_URL}/discover/movie"
+    params = {
+        'api_key': TMDB_API_KEY,
+        'language': 'en-US',
+        'sort_by': 'vote_average.desc',
+        'vote_count.gte': vote_count,
+        'vote_average.gte': min_rating,
+        'primary_release_date.gte': release_start,
+        'primary_release_date.lte': release_end,
+        'page': 1
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json().get('results', [])
+    else:
+        print(f"Failed to fetch movie data: {response.status_code}")
+        return []
 
 def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool = False):
     if random_fact:
