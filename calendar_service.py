@@ -169,22 +169,48 @@ def get_movies_with_high_ratings(
         print(f"Failed to fetch movie data: {response.status_code}")
         return []
     
-def fetch_movie_recommendation(genre: str, rating: float, period: tuple):
+def get_genre_id(genre_name):
+    genre_map = {
+        "Action": 28,
+        "Adventure": 12,
+        "Animation": 16,
+        "Comedy": 35,
+        "Crime": 80,
+        "Documentary": 99,
+        "Drama": 18,
+        "Family": 10751,
+        "Fantasy": 14,
+        "Horror": 27,
+        "Romance": 10749,
+        "Science Fiction": 878,
+        "Thriller": 53,
+        "War": 10752,
+        "Western": 37
+    }
+    genre_id = genre_map.get(genre_name)
+    print("Genre ID for selected genre:", genre_id)  
+    return genre_id    
+    
+def fetch_movie_recommendation(genre, rating, period):
     """
     Fetches a movie recommendation based on genre, rating, and period.
-    
+
     Parameters:
         genre (str): The genre to filter movies.
         rating (float): Minimum rating for movies.
-        period (tuple): A tuple with start and end years (e.g., ("1990-01-01", "1999-12-31")).
+        period (tuple or str): A tuple with start and end dates (e.g., ("1990-01-01", "1999-12-31"))
+                               or a single string if only one date range is intended.
 
     Returns:
         dict: Information about the recommended movie.
     """
-    start_date, end_date = period
-    genre_id = get_genre_id(genre) 
+    if isinstance(period, tuple) and len(period) == 2:
+        start_date, end_date = period
+    else:
+        raise ValueError("Period should be a tuple with two date strings, e.g., ('1990-01-01', '1999-12-31')")
+
+    genre_id = get_genre_id(genre)
     
-    url = f"{BASE_URL}/discover/movie"
     params = {
         'api_key': TMDB_API_KEY,
         'language': 'en-US',
@@ -197,23 +223,20 @@ def fetch_movie_recommendation(genre: str, rating: float, period: tuple):
         'page': 1
     }
     
-    response = requests.get(url, params=params)
-    
+    print("Request parameters for movie recommendation:", params)
+    response = requests.get(f"{BASE_URL}/discover/movie", params=params)
+
     if response.status_code == 200:
         movies = response.json().get('results', [])
+        print("Fetched movies:", movies)
         if movies:
-            print("Fetched movies:", movies)  # Debug output
-            return choice(movies)  # Randomly select a movie from the list
+            return choice(movies)
         else:
             return {"message": "No movies found with the specified criteria."}
     else:
         print(f"Failed to fetch movie data: {response.status_code}")
         return {"message": "Failed to retrieve movie recommendation."}
-
-# Test the fetch_movie_recommendation function directly to verify the movie data retrieval
-print("Direct test of fetch_movie_recommendation function:")
-print(fetch_movie_recommendation("Action", 8, ("2000-01-01", "2009-12-31")))
-
+    
 def get_genre_id(genre_name):
     """
     Returns the genre ID for a given genre name.
