@@ -336,24 +336,42 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
     return {"message": "Manga chapter event added and SMS notification sent.", "event": event}
 
 def get_mindfulness_quote():
-    url = "https://api.quotable.io/random?tags=wisdom,life"
+    url = "https://zenquotes.io/api/random"
+    mindfulness_keywords = ["peace", "calm", "present", "stillness", "mindful", "patience", "acceptance", "gratitude", "serenity"]
+
     try:
-        response = requests.get(url, verify=False)
-        if response.status_code == 200:
+        # Step 1: Fetch the quote data from ZenQuotes API
+        response = requests.get(url)
+        if response.status_code != 200:
+            print(f"Failed to retrieve quote. Status code: {response.status_code}")
+            return "Error retrieving mindfulness message, please try again later."
+
+        # Step 2: Parse the JSON response
+        try:
             data = response.json()
-            # Log the received data for debugging
-            print("API response data:", data)
-            # Check if data contains the expected keys
-            if 'content' in data and 'author' in data:
-                quote = data['content']
-                author = data['author']
-                return f"{quote} - {author}"
-            else:
-                return "The quote structure is unexpected."
+        except ValueError:
+            print("Error parsing JSON response")
+            return "Error retrieving mindfulness message, please try again later."
+
+        # Step 3: Validate data structure
+        if not data or 'q' not in data[0] or 'a' not in data[0]:
+            print("Unexpected data structure in API response:", data)
+            return "Error retrieving mindfulness message, please try again later."
+
+        # Step 4: Extract quote and author
+        quote = data[0]['q']
+        author = data[0]['a']
+
+        # Step 5: Check for mindfulness keywords
+        if any(keyword in quote.lower() for keyword in mindfulness_keywords):
+            return f"{quote} - {author}"
         else:
-            return "Failed to retrieve a quote due to a non-200 status code."
-    except Exception as e:
-        print(f"Error retrieving quote: {e}")
+            print("Quote does not match mindfulness themes. Quote:", quote)
+            return "The retrieved quote doesn't match mindfulness themes. Try again!"
+
+    except requests.RequestException as e:
+        # Handle any request-related exceptions
+        print(f"Request error: {e}")
         return "Error retrieving mindfulness message, please try again later."
     
 def get_motivational_quote():
