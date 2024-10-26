@@ -4,6 +4,7 @@ from typing import Optional
 from calendar_service import (
     add_historical_event_to_calendar, 
     add_manga_chapter_to_calendar,
+    fetch_movie_recommendation,
     get_mindfulness_quote,
     get_motivational_quote,
     get_next_airing_episode, 
@@ -175,6 +176,48 @@ def add_anime_episode(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/schedule-movie-session", summary="Schedule Daytime Movie Session", tags=["Entertainment", "Calendar"])
+def schedule_movie_session(
+    genre: str = "Action", 
+    rating: float = 7.0, 
+    period: str = "1990s", 
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=10)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    reminder_minutes: int = 10
+):
+    try:
+        # Fetch a movie recommendation
+        movie = fetch_movie_recommendation(genre=genre, rating=rating, period=period)
+        
+        print("Response from function:", movie)
+        
+        if not movie:
+            return {"message": "No movie recommendation found. Try adjusting your filters!"}
+        
+        # Schedule the event
+        summary = f"{movie['title']} ({movie['year']}) - {movie['genre']}"
+        description = f"Today's movie: {movie['title']} - Rating: {movie['rating']} | Enjoy some 'Brain' time!"
+        
+        event = create_event(summary, description, start_time, end_time, reminder_minutes)
+        
+        # Optional SMS notification
+        sms_body = f"Movie Recommendation: {movie['title']} - Check your calendar for details!"
+        send_sms_notification(sms_body)
+
+        return {
+            "message": "Movie session scheduled successfully!",
+            "event": event,
+            "movie": {
+                "title": movie["title"],
+                "year": movie["year"],
+                "rating": movie["rating"],
+                "genre": movie["genre"]
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

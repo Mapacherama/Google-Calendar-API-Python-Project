@@ -19,6 +19,8 @@ SENDER_NAME = "EventNotifier"
 VONAGE_API_KEY = os.getenv("VONAGE_API_KEY")
 VONAGE_API_SECRET = os.getenv("VONAGE_API_SECRET")
 USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER")
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+BASE_URL = "https://api.themoviedb.org/3"
 
 client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
 sms = vonage.Sms(client)
@@ -142,7 +144,8 @@ def get_movies_with_high_ratings(
     min_rating: float = 7.0,
     vote_count: int = 50,
     release_start: str = '1990-01-01',
-    release_end: str = '1999-12-31'
+    release_end: str = '1999-12-31',
+    genre_id: Optional[int] = None
 ):
     url = f"{BASE_URL}/discover/movie"
     params = {
@@ -155,12 +158,85 @@ def get_movies_with_high_ratings(
         'primary_release_date.lte': release_end,
         'page': 1
     }
+    
+    if genre_id:
+        params['with_genres'] = genre_id
+
     response = requests.get(url, params=params)
     if response.status_code == 200:
         return response.json().get('results', [])
     else:
         print(f"Failed to fetch movie data: {response.status_code}")
         return []
+    
+def fetch_movie_recommendation(genre: str, rating: float, period: tuple):
+    """
+    Fetches a movie recommendation based on genre, rating, and period.
+    
+    Parameters:
+        genre (str): The genre to filter movies.
+        rating (float): Minimum rating for movies.
+        period (tuple): A tuple with start and end years (e.g., ("1990-01-01", "1999-12-31")).
+
+    Returns:
+        dict: Information about the recommended movie.
+    """
+    start_date, end_date = period
+    genre_id = get_genre_id(genre) 
+    
+    url = f"{BASE_URL}/discover/movie"
+    params = {
+        'api_key': TMDB_API_KEY,
+        'language': 'en-US',
+        'sort_by': 'vote_average.desc',
+        'vote_count.gte': 50,
+        'vote_average.gte': rating,
+        'primary_release_date.gte': start_date,
+        'primary_release_date.lte': end_date,
+        'with_genres': genre_id,
+        'page': 1
+    }
+    
+    response = requests.get(url, params=params)
+    
+    if response.status_code == 200:
+        movies = response.json().get('results', [])
+        if movies:
+            print("Fetched movies:", movies)  # Debug output
+            return choice(movies)  # Randomly select a movie from the list
+        else:
+            return {"message": "No movies found with the specified criteria."}
+    else:
+        print(f"Failed to fetch movie data: {response.status_code}")
+        return {"message": "Failed to retrieve movie recommendation."}
+
+# Test the fetch_movie_recommendation function directly to verify the movie data retrieval
+print("Direct test of fetch_movie_recommendation function:")
+print(fetch_movie_recommendation("Action", 8, ("2000-01-01", "2009-12-31")))
+
+def get_genre_id(genre_name):
+    """
+    Returns the genre ID for a given genre name.
+    """
+    genre_map = {
+        "Action": 28,
+        "Adventure": 12,
+        "Animation": 16,
+        "Comedy": 35,
+        "Crime": 80,
+        "Documentary": 99,
+        "Drama": 18,
+        "Family": 10751,
+        "Fantasy": 14,
+        "Horror": 27,
+        "Romance": 10749,
+        "Science Fiction": 878,
+        "Thriller": 53,
+        "War": 10752,
+        "Western": 37
+    }
+    return genre_map.get(genre_name, None)
+
 
 def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool = False):
     if random_fact:
