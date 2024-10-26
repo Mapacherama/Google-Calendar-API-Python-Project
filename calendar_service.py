@@ -223,12 +223,10 @@ def fetch_movie_recommendation(genre, rating, period):
         'page': 1
     }
     
-    print("Request parameters for movie recommendation:", params)
     response = requests.get(f"{BASE_URL}/discover/movie", params=params)
 
     if response.status_code == 200:
         movies = response.json().get('results', [])
-        print("Fetched movies:", movies)
         if movies:
             return choice(movies)
         else:
