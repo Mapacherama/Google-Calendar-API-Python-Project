@@ -17,6 +17,8 @@ from calendar_service import (
 from auth import authenticate_google_calendar
 from pytz import timezone
 
+from helpers import Utils
+
 from utils import convert_timestamp_to_iso
 
 app = FastAPI()
@@ -187,8 +189,11 @@ def schedule_movie_session(
     reminder_minutes: int = 10
 ):
     try:
+        # Use the Utils class to parse the period
+        start_date, end_date = Utils.parse_period(period)
+
         # Fetch a movie recommendation
-        movie = fetch_movie_recommendation(genre=genre, rating=rating, period=period)
+        movie = fetch_movie_recommendation(genre=genre, rating=rating, period=(start_date, end_date))
         
         print("Response from function:", movie)
         
@@ -196,8 +201,8 @@ def schedule_movie_session(
             return {"message": "No movie recommendation found. Try adjusting your filters!"}
         
         # Schedule the event
-        summary = f"{movie['title']} ({movie['year']}) - {movie['genre']}"
-        description = f"Today's movie: {movie['title']} - Rating: {movie['rating']} | Enjoy some 'Brain' time!"
+        summary = f"{movie['title']} ({movie['release_date'][:4]}) - {genre}"
+        description = f"Today's movie: {movie['title']} - Rating: {movie['vote_average']} | Enjoy some 'Brain' time!"
         
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
@@ -210,14 +215,15 @@ def schedule_movie_session(
             "event": event,
             "movie": {
                 "title": movie["title"],
-                "year": movie["year"],
-                "rating": movie["rating"],
-                "genre": movie["genre"]
+                "year": movie["release_date"][:4],
+                "rating": movie["vote_average"],
+                "genre": genre
             }
         }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 if __name__ == "__main__":
     import uvicorn
