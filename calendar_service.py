@@ -30,19 +30,15 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 
 def notify_spotify_playback(track_uri: str, play_before: int):
-    # Log the input parameters
     print("notify_spotify_playback called with:")
     print("  track_uri:", track_uri)
     print("  play_before:", play_before)
-
-    # Calculate the time to play the Spotify track
+    
     notify_time = datetime.now() + timedelta(minutes=play_before)
     play_time = notify_time.strftime("%H:%M")
-
-    # Set up the Spotify API URL
+    
     spotify_url = "http://127.0.0.1:8000/schedule-playlist"
     
-    # Request payload for Spotify playback
     params = {
         "playlist_uri": track_uri,
         "play_time": play_time,
@@ -51,15 +47,12 @@ def notify_spotify_playback(track_uri: str, play_before: int):
     }
 
     try:
-        # Make the request to the Spotify API
         response = requests.get(spotify_url, params=params)
         
-        # Print detailed information about the response for debugging
         print("Spotify API Request URL:", response.url)
         print("Spotify API Response Status Code:", response.status_code)
         print("Spotify API Response Text:", response.text)
-
-        # Check if the request was successful
+        
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail="Failed to schedule Spotify playback")
 
@@ -382,29 +375,24 @@ def get_mindfulness_quote():
     mindfulness_keywords = ["peace", "calm", "present", "stillness", "mindful", "patience", "acceptance", "gratitude", "serenity"]
 
     try:
-        # Step 1: Fetch the quote data from ZenQuotes API
         response = requests.get(url)
         if response.status_code != 200:
             print(f"Failed to retrieve quote. Status code: {response.status_code}")
             return "Error retrieving mindfulness message, please try again later."
-
-        # Step 2: Parse the JSON response
+        
         try:
             data = response.json()
         except ValueError:
             print("Error parsing JSON response")
             return "Error retrieving mindfulness message, please try again later."
-
-        # Step 3: Validate data structure
+        
         if not data or 'q' not in data[0] or 'a' not in data[0]:
             print("Unexpected data structure in API response:", data)
             return "Error retrieving mindfulness message, please try again later."
-
-        # Step 4: Extract quote and author
+        
         quote = data[0]['q']
         author = data[0]['a']
-
-        # Step 5: Check for mindfulness keywords
+        
         if any(keyword in quote.lower() for keyword in mindfulness_keywords):
             return f"{quote} - {author}"
         else:
@@ -412,7 +400,6 @@ def get_mindfulness_quote():
             return "The retrieved quote doesn't match mindfulness themes. Try again!"
 
     except requests.RequestException as e:
-        # Handle any request-related exceptions
         print(f"Request error: {e}")
         return "Error retrieving mindfulness message, please try again later."
     

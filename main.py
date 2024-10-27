@@ -16,6 +16,7 @@ from calendar_service import (
     delete_event
 )
 from auth import authenticate_google_calendar
+from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
 from helpers import Utils
@@ -23,6 +24,8 @@ from helpers import Utils
 from utils import convert_timestamp_to_iso
 
 app = FastAPI()
+scheduler = BackgroundScheduler()
+scheduler.start()
 
 @app.get("/events", summary="List Upcoming Events", tags=["Calendar"])
 def get_upcoming_events():
@@ -30,6 +33,7 @@ def get_upcoming_events():
     if not events:
         return {"message": "No upcoming events found"}
     return events
+
 @app.post("/create-event", summary="Create Event", tags=["Calendar"])
 def schedule_event(
     summary: str,
@@ -63,30 +67,54 @@ def add_historical_event(
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
     random_fact: bool = False,
-    track_uri: Optional[str] = None  # Optional parameter for Spotify track URI
+    reminder_track_uri: Optional[str] = None,
+    event_start_track_uri: Optional[str] = None
 ):
     event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
     
-    # Spotify integration if track_uri is provided
-    if track_uri:
-        print("Calling notify_spotify_playback for Historical Event with track_uri:", track_uri)
-        notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
-        
+    if reminder_track_uri:
+        print("Calling notify_spotify_playback for reminder with track_uri:", reminder_track_uri)
+        notify_spotify_playback(track_uri=reminder_track_uri, play_before=reminder_minutes)
+
+    if event_start_track_uri:
+        print("Scheduling notify_spotify_playback to play at the event start with track_uri:", event_start_track_uri)
+        scheduler.add_job(
+            notify_spotify_playback,
+            'date',
+            run_date=datetime.fromisoformat(start_time),
+            args=[event_start_track_uri, 0]
+        )
+
     if "message" in event:
         return {"message": event["message"]}
-    return {"message": "Historical event added", "event": event}
+
+    return {
+        "message": "Historical event added, with Spotify playback scheduled if URIs were provided.",
+        "event": event
+    }
+
 
 @app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
 def add_mangadex_chapter(
     manga_title: str, 
     start_time: str = "2024-10-10T18:00:00-07:00", 
     end_time: str = "2024-10-10T19:00:00-07:00",
-    reminder_minutes: Optional[int] = 10
+    reminder_minutes: Optional[int] = 10,
+    track_uri: Optional[str] = None
 ):
     result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes)
+    
+    if track_uri:
+        print("Calling notify_spotify_playback for MangaDex Chapter Event with track_uri:", track_uri)
+        notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+
     if "message" in result:
         return {"message": result["message"]}
-    return {"message": "Manga chapter event added", "event": result}
+    
+    return {
+        "message": "Manga chapter event added, and Spotify playback scheduled (if track URI provided).",
+        "event": result
+    }
 
 # New authentication endpoint for Google Calendar
 @app.get("/authenticate", summary="Authenticate Google Calendar", tags=["Auth"])
@@ -103,7 +131,8 @@ def schedule_mindfulness_event(
     description: Optional[str] = None, 
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
-    reminder_minutes: int = 10
+    reminder_minutes: int = 10,
+    track_uri: Optional[str] = None
 ):
     try:
         quote = get_mindfulness_quote()
@@ -113,11 +142,15 @@ def schedule_mindfulness_event(
         
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
+        if track_uri:
+            print("Calling notify_spotify_playback for Mindfulness Event with track_uri:", track_uri)
+            notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+        
         sms_body = f"Reminder: {summary}. Quote: {quote}"
         send_sms_notification(sms_body)
 
         return {
-            "message": "Mindfulness event created and SMS sent",
+            "message": "Mindfulness event created, SMS sent, and Spotify playback scheduled (if track URI provided).",
             "event": event,
             "quote": quote
         }
@@ -164,7 +197,8 @@ def add_anime_episode(
     anime_title: str, 
     start_time: Optional[str] = None, 
     end_time: Optional[str] = None,
-    reminder_minutes: int = 10
+    reminder_minutes: int = 10,
+    track_uri: Optional[str] = None
 ):
     try:
         anime_info = get_next_airing_episode(anime_title)
@@ -180,6 +214,10 @@ def add_anime_episode(
         
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
+        if track_uri:
+            print("Calling notify_spotify_playback for Anime Episode Event with track_uri:", track_uri)
+            notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+        
         sms_body = f"New Episode Alert: {summary} on {start_time}. Check your calendar for details."
         send_sms_notification(sms_body)
 
@@ -194,7 +232,7 @@ def add_anime_episode(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+        
 @app.post("/schedule-movie-session", summary="Schedule Daytime Movie Session", tags=["Entertainment", "Calendar"])
 def schedule_movie_session(
     genre: str = "Action", 
