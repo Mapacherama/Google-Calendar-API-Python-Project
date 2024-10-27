@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Request, HTTPException
-from typing import Optional
+from typing import List, Optional
 from calendar_service import (
     add_historical_event_to_calendar, 
     add_manga_chapter_to_calendar,
@@ -93,7 +93,6 @@ def add_historical_event(
         "event": event
     }
 
-
 @app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
 def add_mangadex_chapter(
     manga_title: str, 
@@ -132,7 +131,12 @@ def schedule_mindfulness_event(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     reminder_minutes: int = 10,
-    track_uri: Optional[str] = None
+    reminder_track_uris: Optional[List[str]] = None,
+    reminder_offsets: Optional[List[int]] = None,
+    meditation_track_uris: Optional[List[str]] = None,
+    meditation_offsets: Optional[List[int]] = None,
+    post_event_track_uris: Optional[List[str]] = None,
+    post_event_offsets: Optional[List[int]] = None
 ):
     try:
         quote = get_mindfulness_quote()
@@ -142,15 +146,41 @@ def schedule_mindfulness_event(
         
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
-        if track_uri:
-            print("Calling notify_spotify_playback for Mindfulness Event with track_uri:", track_uri)
-            notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+        if reminder_track_uris and reminder_offsets:
+            for uri, offset in zip(reminder_track_uris, reminder_offsets):
+                reminder_time = datetime.fromisoformat(start_time) - timedelta(minutes=offset)
+                scheduler.add_job(
+                    notify_spotify_playback,
+                    'date',
+                    run_date=reminder_time,
+                    args=[uri, 0]
+                )
+
+        if meditation_track_uris and meditation_offsets:
+            for uri, offset in zip(meditation_track_uris, meditation_offsets):
+                meditation_time = datetime.fromisoformat(start_time) + timedelta(minutes=offset)
+                scheduler.add_job(
+                    notify_spotify_playback,
+                    'date',
+                    run_date=meditation_time,
+                    args=[uri, 0]
+                )
+
+        if post_event_track_uris and post_event_offsets:
+            for uri, offset in zip(post_event_track_uris, post_event_offsets):
+                post_event_time = datetime.fromisoformat(end_time) + timedelta(minutes=offset)
+                scheduler.add_job(
+                    notify_spotify_playback,
+                    'date',
+                    run_date=post_event_time,
+                    args=[uri, 0]
+                )
         
         sms_body = f"Reminder: {summary}. Quote: {quote}"
         send_sms_notification(sms_body)
 
         return {
-            "message": "Mindfulness event created, SMS sent, and Spotify playback scheduled (if track URI provided).",
+            "message": "Mindfulness event created, SMS sent, and multiple Spotify playlists scheduled based on provided offsets.",
             "event": event,
             "quote": quote
         }
