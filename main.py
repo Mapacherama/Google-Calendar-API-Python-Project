@@ -144,19 +144,16 @@ def schedule_mindfulness_event(
         event = create_event(summary, description, start_time, end_time, pre_event_offset)
 
         if pre_event_track_uri:
-            pre_event_time = datetime.fromisoformat(start_time) - timedelta(minutes=pre_event_offset)
-            notify_spotify_playback(track_uri=pre_event_track_uri, play_time=pre_event_time.strftime("%H:%M"))
+            notify_spotify_playback(track_uri=pre_event_track_uri, play_before=pre_event_offset)
 
         if during_event_track_uri:
-            during_event_time = datetime.fromisoformat(start_time) + timedelta(minutes=during_event_offset)
-            notify_spotify_playback(track_uri=during_event_track_uri, play_time=during_event_time.strftime("%H:%M"))
+            notify_spotify_playback(track_uri=during_event_track_uri, play_after=during_event_offset)
 
         if post_event_track_uri:
-            post_event_time = datetime.fromisoformat(end_time) + timedelta(minutes=post_event_offset)
-            notify_spotify_playback(track_uri=post_event_track_uri, play_time=post_event_time.strftime("%H:%M"))
+            notify_spotify_playback(track_uri=post_event_track_uri, play_after=post_event_offset)
 
         return {
-            "message": "Mindfulness event created, and Spotify playlists scheduled based on specified times.",
+            "message": "Mindfulness event created, and individual Spotify playlists scheduled based on specified times.",
             "event": event,
             "quote": quote
         }

@@ -29,37 +29,36 @@ import requests
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 
-def notify_spotify_playback(track_uri: str, play_before: int):
-    print("notify_spotify_playback called with:")
-    print("  track_uri:", track_uri)
-    print("  play_before:", play_before)
-    
-    notify_time = datetime.now() + timedelta(minutes=play_before)
-    play_time = notify_time.strftime("%H:%M")
+from typing import Optional
+
+from typing import Optional
+import requests
+from fastapi import HTTPException
+
+def notify_spotify_playback(track_uri: str, play_before: Optional[int] = None, play_after: Optional[int] = None):
+    if play_before is None and play_after is None:
+        raise ValueError("Either play_before or play_after must be specified.")
     
     spotify_url = "http://127.0.0.1:8000/schedule-playlist"
     
     params = {
-        "playlist_uri": track_uri,
-        "play_time": play_time,
-        "track_uri": track_uri,
-        "play_before": play_before
+        "playlist_uri": track_uri
     }
+
+    if play_before is not None:
+        params["play_before"] = play_before
+    elif play_after is not None:
+        params["play_after"] = play_after
 
     try:
         response = requests.get(spotify_url, params=params)
-        
-        print("Spotify API Request URL:", response.url)
-        print("Spotify API Response Status Code:", response.status_code)
-        print("Spotify API Response Text:", response.text)
         
         if response.status_code != 200:
             raise HTTPException(status_code=500, detail="Failed to schedule Spotify playback")
 
     except Exception as e:
-        print(f"Error during Spotify API request: {e}")
         raise HTTPException(status_code=500, detail="Error scheduling Spotify playback")
-
+    
 def send_sms_notification(sms_body):
     try:
         responseData = sms.send_message({
