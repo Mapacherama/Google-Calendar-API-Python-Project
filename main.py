@@ -62,9 +62,16 @@ def add_historical_event(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
-    random_fact: bool = False
+    random_fact: bool = False,
+    track_uri: Optional[str] = None  # Optional parameter for Spotify track URI
 ):
     event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
+    
+    # Spotify integration if track_uri is provided
+    if track_uri:
+        print("Calling notify_spotify_playback for Historical Event with track_uri:", track_uri)
+        notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+        
     if "message" in event:
         return {"message": event["message"]}
     return {"message": "Historical event added", "event": event}
@@ -124,27 +131,22 @@ def schedule_motivational_event(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     reminder_minutes: int = 10,
-    track_uri: Optional[str] = None  # Optional parameter for Spotify track URI
+    track_uri: Optional[str] = None
 ):
-    print("Inside schedule_motivational_event")  # Add this line
-    print("track_uri:", track_uri)  # Add this line	
+    print("Inside schedule_motivational_event")
+    print("track_uri:", track_uri)  
     try:
-        # Fetch the motivational quote
         quote = get_motivational_quote()
         
-        # Set a default description if none provided
         if not description:
             description = f"Motivational Quote of the Day: {quote}"
         
-        # Create the calendar event
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
-        # Check and call notify_spotify_playback if track_uri is provided
         if track_uri:
             print("Calling notify_spotify_playback with track_uri:", track_uri)
             notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
-
-        # Send the SMS notification
+        
         sms_body = f"Reminder: {summary}. Quote: {quote}"
         send_sms_notification(sms_body)    
 
@@ -200,13 +202,11 @@ def schedule_movie_session(
     period: str = "1990s", 
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=10)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S%z'),
-    reminder_minutes: int = 10
+    reminder_minutes: int = 10,
+    track_uri: Optional[str] = None
 ):
     try:
-        # Use the Utils class to parse the period
         start_date, end_date = Utils.parse_period(period)
-
-        # Fetch a movie recommendation
         movie = fetch_movie_recommendation(genre=genre, rating=rating, period=(start_date, end_date))
         
         print("Response from function:", movie)
@@ -214,13 +214,15 @@ def schedule_movie_session(
         if not movie:
             return {"message": "No movie recommendation found. Try adjusting your filters!"}
         
-        # Schedule the event
         summary = f"{movie['title']} ({movie['release_date'][:4]}) - {genre}"
         description = f"Today's movie: {movie['title']} - Rating: {movie['vote_average']} | Enjoy some 'Brain' time!"
         
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
-        # Optional SMS notification
+        if track_uri:
+            print("Calling notify_spotify_playback for Movie Session with track_uri:", track_uri)
+            notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+        
         sms_body = f"Movie Recommendation: {movie['title']} - Check your calendar for details!"
         send_sms_notification(sms_body)
 
