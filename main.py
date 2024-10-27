@@ -10,6 +10,7 @@ from calendar_service import (
     get_next_airing_episode, 
     list_upcoming_events, 
     create_event,
+    notify_spotify_playback,
     send_sms_notification, 
     update_event, 
     delete_event
@@ -122,25 +123,38 @@ def schedule_motivational_event(
     description: Optional[str] = None, 
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
-    reminder_minutes: int = 10
+    reminder_minutes: int = 10,
+    track_uri: Optional[str] = None  # Optional parameter for Spotify track URI
 ):
+    print("Inside schedule_motivational_event")  # Add this line
+    print("track_uri:", track_uri)  # Add this line	
     try:
+        # Fetch the motivational quote
         quote = get_motivational_quote()
         
+        # Set a default description if none provided
         if not description:
             description = f"Motivational Quote of the Day: {quote}"
         
+        # Create the calendar event
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
+        # Check and call notify_spotify_playback if track_uri is provided
+        if track_uri:
+            print("Calling notify_spotify_playback with track_uri:", track_uri)
+            notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+
+        # Send the SMS notification
         sms_body = f"Reminder: {summary}. Quote: {quote}"
-        send_sms_notification(sms_body)
+        send_sms_notification(sms_body)    
 
         return {
-            "message": "Motivational event created and SMS sent",
+            "message": "Motivational event created, SMS sent, and Spotify playback scheduled (if track URI provided).",
             "event": event,
             "quote": quote
         }
     except Exception as e:
+        print("Exception in schedule_motivational_event:", e)
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/add-anime-episode", summary="Add Anime Episode Event", tags=["Anime"])
