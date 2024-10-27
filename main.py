@@ -24,8 +24,6 @@ from helpers import Utils
 from utils import convert_timestamp_to_iso
 
 app = FastAPI()
-scheduler = BackgroundScheduler()
-scheduler.start()
 
 @app.get("/events", summary="List Upcoming Events", tags=["Calendar"])
 def get_upcoming_events():
@@ -130,13 +128,12 @@ def schedule_mindfulness_event(
     description: Optional[str] = None, 
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
-    reminder_minutes: int = 10,
-    reminder_track_uris: Optional[List[str]] = None,
-    reminder_offsets: Optional[List[int]] = None,
-    meditation_track_uris: Optional[List[str]] = None,
-    meditation_offsets: Optional[List[int]] = None,
-    post_event_track_uris: Optional[List[str]] = None,
-    post_event_offsets: Optional[List[int]] = None
+    pre_event_offset: int = 10,
+    pre_event_track_uri: Optional[str] = None,
+    during_event_offset: int = 0,
+    during_event_track_uri: Optional[str] = None,
+    post_event_offset: int = 10,
+    post_event_track_uri: Optional[str] = None
 ):
     try:
         quote = get_mindfulness_quote()
@@ -144,43 +141,22 @@ def schedule_mindfulness_event(
         if not description:
             description = f"Mindfulness Quote of the Day: {quote}"
         
-        event = create_event(summary, description, start_time, end_time, reminder_minutes)
-        
-        if reminder_track_uris and reminder_offsets:
-            for uri, offset in zip(reminder_track_uris, reminder_offsets):
-                reminder_time = datetime.fromisoformat(start_time) - timedelta(minutes=offset)
-                scheduler.add_job(
-                    notify_spotify_playback,
-                    'date',
-                    run_date=reminder_time,
-                    args=[uri, 0]
-                )
+        event = create_event(summary, description, start_time, end_time, pre_event_offset)
 
-        if meditation_track_uris and meditation_offsets:
-            for uri, offset in zip(meditation_track_uris, meditation_offsets):
-                meditation_time = datetime.fromisoformat(start_time) + timedelta(minutes=offset)
-                scheduler.add_job(
-                    notify_spotify_playback,
-                    'date',
-                    run_date=meditation_time,
-                    args=[uri, 0]
-                )
+        if pre_event_track_uri:
+            pre_event_time = datetime.fromisoformat(start_time) - timedelta(minutes=pre_event_offset)
+            notify_spotify_playback(track_uri=pre_event_track_uri, play_time=pre_event_time.strftime("%H:%M"))
 
-        if post_event_track_uris and post_event_offsets:
-            for uri, offset in zip(post_event_track_uris, post_event_offsets):
-                post_event_time = datetime.fromisoformat(end_time) + timedelta(minutes=offset)
-                scheduler.add_job(
-                    notify_spotify_playback,
-                    'date',
-                    run_date=post_event_time,
-                    args=[uri, 0]
-                )
-        
-        sms_body = f"Reminder: {summary}. Quote: {quote}"
-        send_sms_notification(sms_body)
+        if during_event_track_uri:
+            during_event_time = datetime.fromisoformat(start_time) + timedelta(minutes=during_event_offset)
+            notify_spotify_playback(track_uri=during_event_track_uri, play_time=during_event_time.strftime("%H:%M"))
+
+        if post_event_track_uri:
+            post_event_time = datetime.fromisoformat(end_time) + timedelta(minutes=post_event_offset)
+            notify_spotify_playback(track_uri=post_event_track_uri, play_time=post_event_time.strftime("%H:%M"))
 
         return {
-            "message": "Mindfulness event created, SMS sent, and multiple Spotify playlists scheduled based on provided offsets.",
+            "message": "Mindfulness event created, and Spotify playlists scheduled based on specified times.",
             "event": event,
             "quote": quote
         }
