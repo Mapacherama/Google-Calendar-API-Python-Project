@@ -122,7 +122,7 @@ def google_calendar_authenticate():
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-@app.post("/schedule-mindfulness-event", summary="Schedule Mindfulness Event with SMS", tags=["Mindfulness", "Calendar"])
+@app.post("/schedule-mindfulness-event", summary="Schedule Mindfulness Event", tags=["Mindfulness", "Calendar"])
 def schedule_mindfulness_event(
     summary: str = "Mindfulness Reminder", 
     description: Optional[str] = None, 
@@ -147,15 +147,15 @@ def schedule_mindfulness_event(
         
         if pre_event_track_uri:
             pre_event_time = (start_dt - timedelta(minutes=pre_event_offset)).strftime('%Y-%m-%dT%H:%M:%S%z')
-            notify_spotify_playback(track_uri=pre_event_track_uri, start_time=pre_event_time)
+            notify_spotify_playback(track_uri=pre_event_track_uri, play_time=pre_event_time)
 
         if during_event_track_uri:
             during_event_time = start_dt.strftime('%Y-%m-%dT%H:%M:%S%z')  # No offset applied, starts with the event
-            notify_spotify_playback(track_uri=during_event_track_uri, start_time=during_event_time)
+            notify_spotify_playback(track_uri=during_event_track_uri, play_time=during_event_time)
 
         if post_event_track_uri:
             post_event_time = (start_dt + timedelta(minutes=post_event_offset)).strftime('%Y-%m-%dT%H:%M:%S%z')
-            notify_spotify_playback(track_uri=post_event_track_uri, start_time=post_event_time)
+            notify_spotify_playback(track_uri=post_event_track_uri, play_time=post_event_time)
 
         return {
             "message": "Mindfulness event created, and individual Spotify playlists scheduled based on specified times.",
@@ -188,7 +188,7 @@ def schedule_motivational_event(
             start_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
             reminder_time = (start_dt - timedelta(minutes=reminder_minutes)).strftime('%Y-%m-%dT%H:%M:%S%z')
             print("Calling notify_spotify_playback with track_uri:", track_uri)
-            notify_spotify_playback(track_uri=track_uri, start_time=reminder_time)
+            notify_spotify_playback(track_uri=track_uri, play_time=reminder_time)
         
         return {
             "message": "Motivational event created, and Spotify playback scheduled (if track URI provided).",
