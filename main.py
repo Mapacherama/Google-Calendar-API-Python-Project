@@ -142,15 +142,20 @@ def schedule_mindfulness_event(
             description = f"Mindfulness Quote of the Day: {quote}"
         
         event = create_event(summary, description, start_time, end_time, pre_event_offset)
-
+        
+        start_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+        
         if pre_event_track_uri:
-            notify_spotify_playback(track_uri=pre_event_track_uri, play_before=pre_event_offset)
+            pre_event_time = (start_dt - timedelta(minutes=pre_event_offset)).strftime('%Y-%m-%dT%H:%M:%S%z')
+            notify_spotify_playback(track_uri=pre_event_track_uri, start_time=pre_event_time)
 
         if during_event_track_uri:
-            notify_spotify_playback(track_uri=during_event_track_uri, play_after=during_event_offset)
+            during_event_time = start_dt.strftime('%Y-%m-%dT%H:%M:%S%z')  # No offset applied, starts with the event
+            notify_spotify_playback(track_uri=during_event_track_uri, start_time=during_event_time)
 
         if post_event_track_uri:
-            notify_spotify_playback(track_uri=post_event_track_uri, play_after=post_event_offset)
+            post_event_time = (start_dt + timedelta(minutes=post_event_offset)).strftime('%Y-%m-%dT%H:%M:%S%z')
+            notify_spotify_playback(track_uri=post_event_track_uri, start_time=post_event_time)
 
         return {
             "message": "Mindfulness event created, and individual Spotify playlists scheduled based on specified times.",
@@ -160,7 +165,7 @@ def schedule_mindfulness_event(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/schedule-motivational-event", summary="Schedule Motivational Event with SMS", tags=["Motivation", "Calendar"])
+@app.post("/schedule-motivational-event", summary="Schedule Motivational Event", tags=["Motivation", "Calendar"])
 def schedule_motivational_event(
     summary: str = "Motivational Reminder", 
     description: Optional[str] = None, 
@@ -180,14 +185,13 @@ def schedule_motivational_event(
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
         if track_uri:
+            start_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+            reminder_time = (start_dt - timedelta(minutes=reminder_minutes)).strftime('%Y-%m-%dT%H:%M:%S%z')
             print("Calling notify_spotify_playback with track_uri:", track_uri)
-            notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+            notify_spotify_playback(track_uri=track_uri, start_time=reminder_time)
         
-        sms_body = f"Reminder: {summary}. Quote: {quote}"
-        send_sms_notification(sms_body)    
-
         return {
-            "message": "Motivational event created, SMS sent, and Spotify playback scheduled (if track URI provided).",
+            "message": "Motivational event created, and Spotify playback scheduled (if track URI provided).",
             "event": event,
             "quote": quote
         }

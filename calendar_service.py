@@ -35,17 +35,21 @@ from typing import Optional
 import requests
 from fastapi import HTTPException
 
-def notify_spotify_playback(track_uri: str, play_before: Optional[int] = None, play_after: Optional[int] = None):
-    if (play_before is None and play_after is None) or (play_before is not None and play_after is not None):
-        raise ValueError("Specify exactly one of play_before or play_after.")
+from datetime import datetime, timedelta
+
+def notify_spotify_playback(track_uri: str, start_time: str, reminder_minutes: int = None, play_after: Optional[int] = None):
+    if reminder_minutes is None and play_after is None:
+        raise ValueError("Specify either reminder_minutes or play_after.")
 
     spotify_url = "http://127.0.0.1:8000/schedule-playlist"
     params = {
         "playlist_uri": track_uri
     }
     
-    if play_before is not None:
-        params["play_before"] = play_before
+    if reminder_minutes is not None:
+        start_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+        play_before_time = start_dt - timedelta(minutes=reminder_minutes)
+        params["play_before"] = play_before_time.strftime('%Y-%m-%dT%H:%M:%S%z')
     else:
         params["play_after"] = play_after
 
