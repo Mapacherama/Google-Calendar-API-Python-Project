@@ -36,18 +36,17 @@ import requests
 from fastapi import HTTPException
 
 def notify_spotify_playback(track_uri: str, play_before: Optional[int] = None, play_after: Optional[int] = None):
-    if play_before is None and play_after is None:
-        raise ValueError("Either play_before or play_after must be specified.")
-    
+    if (play_before is None and play_after is None) or (play_before is not None and play_after is not None):
+        raise ValueError("Specify exactly one of play_before or play_after.")
+
     spotify_url = "http://127.0.0.1:8000/schedule-playlist"
-    
     params = {
         "playlist_uri": track_uri
     }
-
+    
     if play_before is not None:
         params["play_before"] = play_before
-    elif play_after is not None:
+    else:
         params["play_after"] = play_after
 
     try:
