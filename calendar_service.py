@@ -5,7 +5,7 @@ from auth import authenticate_google_calendar
 from win10toast_click import ToastNotifier
 from typing import Optional
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 import vonage
 import os
 from random import choice, randint
@@ -24,20 +24,6 @@ BASE_URL = "https://api.themoviedb.org/3"
 
 client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
 sms = vonage.Sms(client)
-
-import requests
-from datetime import datetime, timedelta
-from fastapi import HTTPException
-
-from typing import Optional
-
-from typing import Optional
-import requests
-from fastapi import HTTPException
-
-from datetime import datetime, timedelta
-
-from datetime import datetime
 
 def notify_spotify_playback(track_uri: str, play_time: str):
     spotify_url = "http://127.0.0.1:8000/schedule-playlist"

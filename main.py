@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from sched import scheduler
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import RedirectResponse
 from typing import List, Optional
 from calendar_service import (
     add_historical_event_to_calendar, 
@@ -16,15 +18,15 @@ from calendar_service import (
     delete_event
 )
 from auth import authenticate_google_calendar
-from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 
 from helpers import Utils
-
 from utils import convert_timestamp_to_iso
+from todoist_service import get_auth_url, exchange_code_for_token, fetch_todoist_tasks
 
 app = FastAPI()
 
+# Google Calendar Endpoints
 @app.get("/events", summary="List Upcoming Events", tags=["Calendar"])
 def get_upcoming_events():
     events = list_upcoming_events()
@@ -113,7 +115,7 @@ def add_mangadex_chapter(
         "event": result
     }
 
-# New authentication endpoint for Google Calendar
+# Google Calendar Authentication Endpoint
 @app.get("/authenticate", summary="Authenticate Google Calendar", tags=["Auth"])
 def google_calendar_authenticate():
     creds = authenticate_google_calendar()
@@ -122,6 +124,27 @@ def google_calendar_authenticate():
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
+# Todoist Authentication and Task Fetching
+@app.get("/login")
+def login():
+    return RedirectResponse(url=get_auth_url())
+
+@app.get("/callback")
+def callback(request: Request):
+    code = request.query_params.get("code")
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code not provided")
+    access_token = exchange_code_for_token(code)
+    return {"message": "Authorization successful", "access_token": access_token}
+
+@app.get("/fetch_tasks", summary="Fetch Todoist Tasks", tags=["Todoist"])
+def fetch_tasks_endpoint():
+    tasks = fetch_todoist_tasks()
+    if not tasks:
+        raise HTTPException(status_code=404, detail="No tasks found in Todoist")
+    return tasks
+
+# Mindfulness and Motivational Event Scheduling
 @app.post("/schedule-mindfulness-event", summary="Schedule Mindfulness Event", tags=["Mindfulness", "Calendar"])
 def schedule_mindfulness_event(
     summary: str = "Mindfulness Reminder", 
@@ -165,6 +188,7 @@ def schedule_mindfulness_event(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Motivational Event Scheduling
 @app.post("/schedule-motivational-event", summary="Schedule Motivational Event", tags=["Motivation", "Calendar"])
 def schedule_motivational_event(
     summary: str = "Motivational Reminder", 
@@ -198,7 +222,8 @@ def schedule_motivational_event(
     except Exception as e:
         print("Exception in schedule_motivational_event:", e)
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+# Anime Episode Event Scheduling
 @app.post("/add-anime-episode", summary="Add Anime Episode Event", tags=["Anime"])
 def add_anime_episode(
     anime_title: str, 
@@ -240,6 +265,7 @@ def add_anime_episode(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
+# Movie Session Scheduling
 @app.post("/schedule-movie-session", summary="Schedule Daytime Movie Session", tags=["Entertainment", "Calendar"])
 def schedule_movie_session(
     genre: str = "Action", 
