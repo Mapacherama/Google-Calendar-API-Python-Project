@@ -153,7 +153,6 @@ def schedule_mindfulness_event(
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     pre_event_offset: int = 10,
     pre_event_track_uri: Optional[str] = None,
-    during_event_offset: int = 0,
     during_event_track_uri: Optional[str] = None,
     post_event_offset: int = 10,
     post_event_track_uri: Optional[str] = None
@@ -173,7 +172,7 @@ def schedule_mindfulness_event(
             notify_spotify_playback(track_uri=pre_event_track_uri, play_time=pre_event_time)
 
         if during_event_track_uri:
-            during_event_time = start_dt.strftime('%Y-%m-%dT%H:%M:%S%z')  # No offset applied, starts with the event
+            during_event_time = start_dt.strftime('%Y-%m-%dT%H:%M:%S%z')
             notify_spotify_playback(track_uri=during_event_track_uri, play_time=during_event_time)
 
         if post_event_track_uri:
