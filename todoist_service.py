@@ -32,7 +32,8 @@ def exchange_code_for_token(code: str):
         access_token = response.json().get("access_token")
         return access_token
     else:
-        raise Exception("Failed to retrieve access token")
+        error_message = response.json().get("error", "Unknown error")
+        raise Exception(f"Failed to retrieve access token: {error_message}")
 
 def fetch_todoist_tasks():
     headers = {

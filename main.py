@@ -24,7 +24,22 @@ from helpers import Utils
 from utils import convert_timestamp_to_iso
 from todoist_service import get_auth_url, exchange_code_for_token, fetch_todoist_tasks
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+# CORS configuration
+origins = [
+    "http://localhost:7000",  # Allow your own backend URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows specific origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Google Calendar Endpoints
 @app.get("/events", summary="List Upcoming Events", tags=["Calendar"])
@@ -127,7 +142,9 @@ def google_calendar_authenticate():
 # Todoist Authentication and Task Fetching
 @app.get("/login")
 def login():
-    return RedirectResponse(url=get_auth_url())
+    auth_url = get_auth_url()
+    print("Redirecting to:", auth_url)  # Log the redirect URL
+    return RedirectResponse(url=auth_url)
 
 @app.get("/callback")
 def callback(request: Request):
