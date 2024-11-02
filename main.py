@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
-from sched import scheduler
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import RedirectResponse
-from typing import List, Optional
+from typing import Optional
 from calendar_service import (
     add_historical_event_to_calendar, 
     add_manga_chapter_to_calendar,
@@ -19,26 +17,24 @@ from calendar_service import (
 )
 from auth import authenticate_google_calendar
 from pytz import timezone
-
 from helpers import Utils
 from utils import convert_timestamp_to_iso
-from todoist_service import get_auth_url, exchange_code_for_token, fetch_todoist_tasks
-
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 # CORS configuration
 origins = [
-    "http://localhost:7000",  # Allow your own backend URL
+    "http://localhost:3000",  # Your frontend URL
+    "http://localhost:7000",  # Your backend URL
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Allows specific origins
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Google Calendar Endpoints
@@ -138,28 +134,6 @@ def google_calendar_authenticate():
         return {"message": "Authentication successful, token.json created"}
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
-
-# Todoist Authentication and Task Fetching
-@app.get("/login")
-def login():
-    auth_url = get_auth_url()
-    print("Redirecting to:", auth_url)  # Log the redirect URL
-    return RedirectResponse(url=auth_url)
-
-@app.get("/callback")
-def callback(request: Request):
-    code = request.query_params.get("code")
-    if not code:
-        raise HTTPException(status_code=400, detail="Authorization code not provided")
-    access_token = exchange_code_for_token(code)
-    return {"message": "Authorization successful", "access_token": access_token}
-
-@app.get("/fetch_tasks", summary="Fetch Todoist Tasks", tags=["Todoist"])
-def fetch_tasks_endpoint():
-    tasks = fetch_todoist_tasks()
-    if not tasks:
-        raise HTTPException(status_code=404, detail="No tasks found in Todoist")
-    return tasks
 
 # Mindfulness and Motivational Event Scheduling
 @app.post("/schedule-mindfulness-event", summary="Schedule Mindfulness Event", tags=["Mindfulness", "Calendar"])
