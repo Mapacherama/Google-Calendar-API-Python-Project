@@ -10,6 +10,7 @@ import vonage
 import os
 from random import choice, randint
 from dotenv import load_dotenv
+import random
 
 load_dotenv()
 
@@ -20,10 +21,13 @@ VONAGE_API_KEY = os.getenv("VONAGE_API_KEY")
 VONAGE_API_SECRET = os.getenv("VONAGE_API_SECRET")
 USER_PHONE_NUMBER = os.getenv("USER_PHONE_NUMBER")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+API_NINJAS_KEY = os.getenv("API_NINJAS_KEY")
 BASE_URL = "https://api.themoviedb.org/3"
 
 client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
 sms = vonage.Sms(client)
+
+API_NINJAS_KEY = os.getenv("API_NINJAS_KEY")
 
 def notify_spotify_playback(track_uri: str, play_time: str):
     spotify_url = "http://127.0.0.1:8000/schedule-playlist"
@@ -353,38 +357,20 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
     return {"message": "Manga chapter event added and SMS notification sent.", "event": event}
 
 def get_mindfulness_quote():
-    url = "https://zenquotes.io/api/random"
-    mindfulness_keywords = ["peace", "calm", "present", "stillness", "mindful", "patience", "acceptance", "gratitude", "serenity"]
+    category = 'happiness'
+    api_url = 'https://api.api-ninjas.com/v1/quotes?category={}'.format(category)
+    response = requests.get(api_url, headers={'X-Api-Key': API_NINJAS_KEY})
 
-    try:
-        response = requests.get(url)
-        if response.status_code != 200:
-            print(f"Failed to retrieve quote. Status code: {response.status_code}")
-            return "Error retrieving mindfulness message, please try again later."
-        
-        try:
-            data = response.json()
-        except ValueError:
-            print("Error parsing JSON response")
-            return "Error retrieving mindfulness message, please try again later."
-        
-        if not data or 'q' not in data[0] or 'a' not in data[0]:
-            print("Unexpected data structure in API response:", data)
-            return "Error retrieving mindfulness message, please try again later."
-        
-        quote = data[0]['q']
-        author = data[0]['a']
-        
-        if any(keyword in quote.lower() for keyword in mindfulness_keywords):
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            quote = data[0].get("quote", "No quote available")
+            author = data[0].get("author", "Unknown")
             return f"{quote} - {author}"
-        else:
-            print("Quote does not match mindfulness themes. Quote:", quote)
-            return "The retrieved quote doesn't match mindfulness themes. Try again!"
-
-    except requests.RequestException as e:
-        print(f"Request error: {e}")
+    else:
+        print(f"Failed to retrieve quote. Status code: {response.status_code}, Response: {response.text}")
         return "Error retrieving mindfulness message, please try again later."
-    
+
 def get_motivational_quote():
     try:
         response = requests.get("https://zenquotes.io/api/random")
