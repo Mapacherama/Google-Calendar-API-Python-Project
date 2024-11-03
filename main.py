@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException
 from typing import Optional
 from calendar_service import (
     add_historical_event_to_calendar, 
