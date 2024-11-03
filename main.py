@@ -78,23 +78,13 @@ def add_historical_event(
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
     random_fact: bool = False,
-    reminder_track_uri: Optional[str] = None,
-    event_start_track_uri: Optional[str] = None
+    reminder_track_uri: Optional[str] = None
 ):
     event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
     
     if reminder_track_uri:
         print("Calling notify_spotify_playback for reminder with track_uri:", reminder_track_uri)
         notify_spotify_playback(track_uri=reminder_track_uri, play_before=reminder_minutes)
-
-    if event_start_track_uri:
-        print("Scheduling notify_spotify_playback to play at the event start with track_uri:", event_start_track_uri)
-        scheduler.add_job(
-            notify_spotify_playback,
-            'date',
-            run_date=datetime.fromisoformat(start_time),
-            args=[event_start_track_uri, 0]
-        )
 
     if "message" in event:
         return {"message": event["message"]}
