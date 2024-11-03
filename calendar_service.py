@@ -357,8 +357,29 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
     return {"message": "Manga chapter event added and SMS notification sent.", "event": event}
 
 def get_mindfulness_quote():
-    category = 'happiness'
+    mindfulness_categories = [
+    'calm',
+    'courage',
+    'fear',
+    'happiness',
+    'hope',
+    'forgiveness',
+    'freedom',
+    'friendship',
+    'inspirational',
+    'love',
+    'life',
+    'health',
+    'attitude',
+    'beauty',
+    'success'
+    ]
+
+    category = random.choice(mindfulness_categories)
+    print(f"Selected Category: {category}")
+
     api_url = 'https://api.api-ninjas.com/v1/quotes?category={}'.format(category)
+    
     response = requests.get(api_url, headers={'X-Api-Key': API_NINJAS_KEY})
 
     if response.status_code == 200:
