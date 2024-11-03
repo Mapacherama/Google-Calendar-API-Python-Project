@@ -19,25 +19,9 @@ from auth import authenticate_google_calendar
 from pytz import timezone
 from helpers import Utils
 from utils import convert_timestamp_to_iso
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# CORS configuration
-origins = [
-    "http://localhost:3000",  # Your frontend URL
-    "http://localhost:7000",  # Your backend URL
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Google Calendar Endpoints
 @app.get("/events", summary="List Upcoming Events", tags=["Calendar"])
 def get_upcoming_events():
     events = list_upcoming_events()
@@ -116,7 +100,6 @@ def add_mangadex_chapter(
         "event": result
     }
 
-# Google Calendar Authentication Endpoint
 @app.get("/authenticate", summary="Authenticate Google Calendar", tags=["Auth"])
 def google_calendar_authenticate():
     creds = authenticate_google_calendar()
@@ -125,7 +108,6 @@ def google_calendar_authenticate():
     else:
         raise HTTPException(status_code=401, detail="Authentication failed")
 
-# Mindfulness and Motivational Event Scheduling
 @app.post("/schedule-mindfulness-event", summary="Schedule Mindfulness Event", tags=["Mindfulness", "Calendar"])
 def schedule_mindfulness_event(
     summary: str = "Mindfulness Reminder", 
@@ -168,7 +150,6 @@ def schedule_mindfulness_event(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Motivational Event Scheduling
 @app.post("/schedule-motivational-event", summary="Schedule Motivational Event", tags=["Motivation", "Calendar"])
 def schedule_motivational_event(
     summary: str = "Motivational Reminder", 
@@ -203,7 +184,6 @@ def schedule_motivational_event(
         print("Exception in schedule_motivational_event:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-# Anime Episode Event Scheduling
 @app.post("/add-anime-episode", summary="Add Anime Episode Event", tags=["Anime"])
 def add_anime_episode(
     anime_title: str, 
@@ -245,7 +225,6 @@ def add_anime_episode(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
-# Movie Session Scheduling
 @app.post("/schedule-movie-session", summary="Schedule Daytime Movie Session", tags=["Entertainment", "Calendar"])
 def schedule_movie_session(
     genre: str = "Action", 
