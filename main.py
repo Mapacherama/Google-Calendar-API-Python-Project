@@ -1,23 +1,24 @@
 from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException
 from typing import Optional
+from anime_service import get_next_airing_episode
 from calendar_service import (
-    add_historical_event_to_calendar, 
-    add_manga_chapter_to_calendar,
-    fetch_movie_recommendation,
-    get_mindfulness_quote,
-    get_motivational_quote,
-    get_next_airing_episode, 
     list_upcoming_events, 
     create_event,
-    notify_spotify_playback,
-    send_sms_notification, 
+    notify_spotify_playback, 
     update_event, 
     delete_event
 )
 from auth import authenticate_google_calendar
 from pytz import timezone
 from helpers import Utils
+from historical_service import add_historical_event_to_calendar
+from manga_service import add_manga_chapter_to_calendar
+from mindfulness_service import get_mindfulness_quote
+from motivational_service import get_motivational_quote
+from movie_service import fetch_movie_recommendation
+from notification_service import send_sms_notification
+from spotify_service import notify_spotify_playback
 from utils import convert_timestamp_to_iso
 
 app = FastAPI()
