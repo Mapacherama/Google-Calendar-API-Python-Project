@@ -5,7 +5,6 @@ from anime_service import get_next_airing_episode
 from calendar_service import (
     list_upcoming_events, 
     create_event,
-    notify_spotify_playback, 
     update_event, 
     delete_event
 )
