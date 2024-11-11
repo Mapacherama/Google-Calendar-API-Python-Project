@@ -67,6 +67,7 @@ def create_event(
 
     try:
         service = authenticate_google_calendar()
+        print("Google Calendar Service:", service)  # Debugging line
         created_event = service.events().insert(calendarId='primary', body=event).execute()
         return created_event
     except Exception as e:
