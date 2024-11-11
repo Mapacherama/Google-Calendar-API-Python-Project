@@ -1,5 +1,5 @@
 import os
-from random import random
+from random import choice
 import requests
 
 API_NINJAS_KEY = os.getenv("API_NINJAS_KEY")
@@ -23,7 +23,7 @@ def get_mindfulness_quote():
         'success'
     ]
 
-    category = random.choice(mindfulness_categories)
+    category = choice(mindfulness_categories)
     print(f"Selected Category: {category}")
 
     api_url = 'https://api.api-ninjas.com/v1/quotes?category={}'.format(category)
