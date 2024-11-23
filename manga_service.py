@@ -35,17 +35,23 @@ def get_latest_manga_chapter(manga_id: str):
     return {"chapter_title": chapter_title, "chapter_url": chapter_url}
 
 
-def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str, reminder_minutes: int):
-    manga_info = search_manga(manga_title)
-    if "message" in manga_info:
-        return {"message": manga_info["message"]}
+def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str, reminder_minutes: int, chapter_url: str = None):
+    if chapter_url:
+        # If a chapter URL is provided, skip the search for a new chapter
+        summary = f"Reading Chapter of {manga_title}"
+        description = f"Read the chapter here: {chapter_url}"
+    else:
+        manga_info = search_manga(manga_title)
+        if "message" in manga_info:
+            return {"message": manga_info["message"]}
 
-    chapter_info = get_latest_manga_chapter(manga_info["id"])
-    if "message" in chapter_info:
-        return {"message": chapter_info["message"]}
+        chapter_info = get_latest_manga_chapter(manga_info["id"])
+        if "message" in chapter_info:
+            return {"message": chapter_info["message"]}
 
-    summary = f"New Chapter of {manga_info['title']} Available!"
-    description = f"Read the latest chapter here: {chapter_info['chapter_url']}"
+        summary = f"New Chapter of {manga_info['title']} Available!"
+        chapter_url = chapter_info['chapter_url']  # Use the URL from the latest chapter
+        description = f"Read the latest chapter here: {chapter_url}"
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
 
@@ -53,10 +59,10 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
     # sms_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
     # send_sms_notification(sms_body)
 
-    webbrowser.open(chapter_info['chapter_url'])
+    webbrowser.open(chapter_url)
 
     return {
         "message": "Manga chapter event added.",
         "event": event,
-        "chapter_url": chapter_info['chapter_url']
+        "chapter_url": chapter_url
     }
