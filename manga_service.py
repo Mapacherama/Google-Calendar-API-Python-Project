@@ -37,7 +37,6 @@ def get_latest_manga_chapter(manga_id: str):
 
 def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str, reminder_minutes: int, chapter_url: str = None):
     if chapter_url:
-        # If a chapter URL is provided, skip the search for a new chapter
         summary = f"Reading Chapter of {manga_title}"
         description = f"Read the chapter here: {chapter_url}"
     else:
@@ -50,14 +49,10 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
             return {"message": chapter_info["message"]}
 
         summary = f"New Chapter of {manga_info['title']} Available!"
-        chapter_url = chapter_info['chapter_url']  # Use the URL from the latest chapter
+        chapter_url = chapter_info['chapter_url']  
         description = f"Read the latest chapter here: {chapter_url}"
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
-
-    # Removed SMS notification for now
-    # sms_body = f"New Chapter of {manga_info['title']} available! Check your calendar for details."
-    # send_sms_notification(sms_body)
 
     webbrowser.open(chapter_url)
 

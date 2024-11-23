@@ -88,16 +88,17 @@ def add_mangadex_chapter(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
-    track_uri: Optional[str] = None
+    track_uri: Optional[str] = None,
+    chapter_url: Optional[str] = None
 ):
     start_time = start_time[:-2] + ':' + start_time[-2:]  
     end_time = end_time[:-2] + ':' + end_time[-2:] 
 
-    result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes)
+    result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes, chapter_url)
     
     if track_uri:
         print("Calling notify_spotify_playback for MangaDex Chapter Event with track_uri:", track_uri)
-        notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
+        notify_spotify_playback(track_uri=track_uri)
 
     if "message" in result:
         return {"message": result["message"]}
