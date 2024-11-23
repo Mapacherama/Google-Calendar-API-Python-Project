@@ -1,12 +1,8 @@
 import requests
-import webbrowser
-import time
+import os
 from datetime import datetime
-from pytz import timezone
 
 from calendar_service import create_event
-from notification_service import send_sms_notification
-
 
 def search_manga(title: str):
     url = f"https://api.mangadex.org/manga?title={title}"
@@ -56,13 +52,16 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
         description = f"Read the latest chapter here: {chapter_url}"
 
     start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
-    delay = (start_time_dt - datetime.now(timezone('Europe/Amsterdam'))).total_seconds()
 
-    if delay > 0:
-        time.sleep(delay)
+    open_command = "start"
+
+    cron_command = f'echo "{start_time_dt.minute} {start_time_dt.hour} {start_time_dt.day} {start_time_dt.month} * {open_command} {chapter_url}" | crontab -'
+    
+    result = os.system(cron_command)
+    if result != 0:
+        return {"message": "Failed to set cron job."}
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
-    webbrowser.open(chapter_url)
 
     return {
         "message": "Manga chapter event added.",
