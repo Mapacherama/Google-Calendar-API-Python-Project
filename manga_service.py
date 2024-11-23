@@ -1,5 +1,8 @@
 import requests
 import webbrowser
+import time
+from datetime import datetime
+from pytz import timezone
 
 from calendar_service import create_event
 from notification_service import send_sms_notification
@@ -52,8 +55,13 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
         chapter_url = chapter_info['chapter_url']  
         description = f"Read the latest chapter here: {chapter_url}"
 
-    event = create_event(summary, description, start_time, end_time, reminder_minutes)
+    start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+    delay = (start_time_dt - datetime.now(timezone('Europe/Amsterdam'))).total_seconds()
 
+    if delay > 0:
+        time.sleep(delay)
+
+    event = create_event(summary, description, start_time, end_time, reminder_minutes)
     webbrowser.open(chapter_url)
 
     return {
