@@ -64,19 +64,23 @@ def add_historical_event(
     random_fact: bool = False,
     reminder_track_uri: Optional[str] = None
 ):
-    event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
-    
-    if reminder_track_uri:
-        print("Calling notify_spotify_playback for reminder with track_uri:", reminder_track_uri)
-        notify_spotify_playback(track_uri=reminder_track_uri, play_before=reminder_minutes)
+    try:
+        event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
+        
+        if reminder_track_uri:
+            print("Calling notify_spotify_playback for reminder with track_uri:", reminder_track_uri)
+            notify_spotify_playback(track_uri=reminder_track_uri, play_before=reminder_minutes)
 
-    if "message" in event:
-        return {"message": event["message"]}
+        if "message" in event:
+            return {"message": event["message"]}
 
-    return {
-        "message": "Historical event added, with Spotify playback scheduled if URIs were provided.",
-        "event": event
-    }
+        return {
+            "message": "Historical event added, with Spotify playback scheduled if URIs were provided.",
+            "event": event
+        }
+    except Exception as e:
+        print("Error adding historical event:", str(e))  # Log the error
+        raise HTTPException(status_code=500, detail="Failed to add historical event.")
 
 @app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
 def add_mangadex_chapter(
@@ -84,7 +88,8 @@ def add_mangadex_chapter(
     start_time: str = "2024-10-10T18:00:00-07:00", 
     end_time: str = "2024-10-10T19:00:00-07:00",
     reminder_minutes: Optional[int] = 10,
-    track_uri: Optional[str] = None
+    track_uri: Optional[str] = None,
+    chapter_url: Optional[str] = None
 ):
     result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes)
     
@@ -97,7 +102,8 @@ def add_mangadex_chapter(
     
     return {
         "message": "Manga chapter event added, and Spotify playback scheduled (if track URI provided).",
-        "event": result
+        "event": result,
+        "chapter_url": chapter_url
     }
 
 @app.get("/authenticate", summary="Authenticate Google Calendar", tags=["Auth"])
