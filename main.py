@@ -98,8 +98,7 @@ def add_mangadex_chapter(
         description = f"Read the chapter here: {chapter_url}"
         target_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
         print(f"Scheduling to open chapter URL at {target_time}")
-        wait_until(target_time)
-        open_chapter(chapter_url)
+        open_chapter(chapter_url, target_time)
     else:
         manga_info = search_manga(manga_title)
         if "message" in manga_info:
@@ -114,8 +113,7 @@ def add_mangadex_chapter(
         description = f"Read the latest chapter here: {chapter_url}"
         target_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
         print(f"Scheduling to open latest chapter URL at {target_time}")
-        wait_until(target_time)
-        open_chapter(chapter_url)
+        open_chapter(chapter_url, target_time)
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return {
