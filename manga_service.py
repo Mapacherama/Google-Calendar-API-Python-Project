@@ -45,7 +45,7 @@ def wait_until(target_time):
 
 
 def open_chapter(chapter_url, target_time):
-    now = datetime.now()
+    now = datetime.now(timezone('Europe/Amsterdam'))
     wait_seconds = (target_time - now).total_seconds()
     if wait_seconds > 0:
         print(f"Waiting for {wait_seconds:.2f} seconds to open the chapter...")
