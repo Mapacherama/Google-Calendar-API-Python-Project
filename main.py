@@ -85,11 +85,14 @@ def add_historical_event(
 @app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
 def add_mangadex_chapter(
     manga_title: str, 
-    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:00%z'), 
-    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=60)).strftime('%Y-%m-%dT%H:00%z'),
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
     track_uri: Optional[str] = None
 ):
+    start_time = start_time[:-2] + ':' + start_time[-2:]  
+    end_time = end_time[:-2] + ':' + end_time[-2:] 
+
     result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes)
     
     if track_uri:
