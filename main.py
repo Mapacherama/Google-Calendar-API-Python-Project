@@ -12,7 +12,7 @@ from auth import authenticate_google_calendar
 from pytz import timezone
 from helpers import Utils
 from historical_service import add_historical_event_to_calendar
-from manga_service import add_manga_chapter_to_calendar
+from manga_service import add_manga_chapter_to_calendar, get_latest_manga_chapter, open_chapter, search_manga, wait_until
 from mindfulness_service import get_mindfulness_quote
 from motivational_service import get_motivational_quote
 from movie_service import fetch_movie_recommendation
@@ -84,29 +84,44 @@ def add_historical_event(
 
 @app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
 def add_mangadex_chapter(
-    manga_title: str, 
-    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
+    manga_title: str,
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
-    track_uri: Optional[str] = None,
     chapter_url: Optional[str] = None
 ):
-    start_time = start_time[:-2] + ':' + start_time[-2:]  
-    end_time = end_time[:-2] + ':' + end_time[-2:] 
+    start_time = start_time[:-2] + ':' + start_time[-2:]
+    end_time = end_time[:-2] + ':' + end_time[-2:]
 
-    result = add_manga_chapter_to_calendar(manga_title, start_time, end_time, reminder_minutes, chapter_url)
-    
-    if track_uri:
-        print("Calling notify_spotify_playback for MangaDex Chapter Event with track_uri:", track_uri)
-        notify_spotify_playback(track_uri=track_uri)
+    if chapter_url:
+        summary = f"Reading Chapter of {manga_title}"
+        description = f"Read the chapter here: {chapter_url}"
+        target_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+        print(f"Scheduling to open chapter URL at {target_time}")
+        wait_until(target_time)
+        open_chapter(chapter_url)
+    else:
+        manga_info = search_manga(manga_title)
+        if "message" in manga_info:
+            return {"message": manga_info["message"]}
 
-    if "message" in result:
-        return {"message": result["message"]}
-    
+        chapter_info = get_latest_manga_chapter(manga_info["id"])
+        if "message" in chapter_info:
+            return {"message": chapter_info["message"]}
+
+        summary = f"New Chapter of {manga_info['title']} Available!"
+        chapter_url = chapter_info['chapter_url']
+        description = f"Read the latest chapter here: {chapter_url}"
+        target_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+        print(f"Scheduling to open latest chapter URL at {target_time}")
+        wait_until(target_time)
+        open_chapter(chapter_url)
+
+    event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return {
-        "message": "Manga chapter event added, and Spotify playback scheduled (if track URI provided).",
-        "event": result,
-        "chapter_url": result.get("chapter_url") 
+        "message": "Manga chapter event handled successfully.",
+        "event": event,
+        "chapter_url": chapter_url
     }
 
 @app.get("/authenticate", summary="Authenticate Google Calendar", tags=["Auth"])
