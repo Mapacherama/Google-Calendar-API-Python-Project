@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from typing import Optional
 from anime_service import get_next_airing_episode
 from calendar_service import (
@@ -12,7 +12,7 @@ from auth import authenticate_google_calendar
 from pytz import timezone
 from helpers import Utils
 from historical_service import add_historical_event_to_calendar
-from manga_service import add_manga_chapter_to_calendar, get_latest_manga_chapter, open_chapter, search_manga, wait_until
+from manga_service import get_latest_manga_chapter, open_chapter, search_manga
 from mindfulness_service import get_mindfulness_quote
 from motivational_service import get_motivational_quote
 from movie_service import fetch_movie_recommendation
@@ -84,6 +84,7 @@ def add_historical_event(
 
 @app.post("/add-mangadex-chapter", summary="Add MangaDex Chapter Event", tags=["Manga"])
 def add_mangadex_chapter(
+    background_tasks: BackgroundTasks,
     manga_title: str,
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=60)).strftime('%Y-%m-%dT%H:%M:%S%z'),
@@ -92,17 +93,18 @@ def add_mangadex_chapter(
 ):
     try:
         start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
-        end_time_dt = datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S%z')
     except ValueError as e:
         return {"error": f"Invalid time format: {str(e)}"}
 
-    print(f"Event Duration: Start - {start_time_dt}, End - {end_time_dt}")
+    delay_seconds = (start_time_dt - datetime.now(timezone('Europe/Amsterdam'))).total_seconds()
+    if delay_seconds < 0:
+        return {"error": "The start time is in the past. Please provide a future time."}
 
     if chapter_url:
         summary = f"Reading Chapter of {manga_title}"
         description = f"Read the chapter here: {chapter_url}"
         print(f"Scheduling to open chapter URL at {start_time_dt}")
-        open_chapter(chapter_url, start_time_dt)
+        background_tasks.add_task(open_chapter, chapter_url, start_time_dt)
     else:
         manga_info = search_manga(manga_title)
         if "message" in manga_info:
@@ -116,13 +118,14 @@ def add_mangadex_chapter(
         chapter_url = chapter_info['chapter_url']
         description = f"Read the latest chapter here: {chapter_url}"
         print(f"Scheduling to open latest chapter URL at {start_time_dt}")
-        open_chapter(chapter_url, start_time_dt)
+        background_tasks.add_task(open_chapter, chapter_url, start_time_dt)
 
+    # Create Google Calendar Event
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
     print(f"Google Calendar Event Created: {event}")
 
     return {
-        "message": "Manga chapter event handled successfully.",
+        "message": "Manga chapter event scheduled successfully.",
         "event": event,
         "chapter_url": chapter_url
     }
