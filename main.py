@@ -90,15 +90,19 @@ def add_mangadex_chapter(
     reminder_minutes: Optional[int] = 10,
     chapter_url: Optional[str] = None
 ):
-    start_time = start_time[:-2] + ':' + start_time[-2:]
-    end_time = end_time[:-2] + ':' + end_time[-2:]
+    try:
+        start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+        end_time_dt = datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S%z')
+    except ValueError as e:
+        return {"error": f"Invalid time format: {str(e)}"}
+
+    print(f"Event Duration: Start - {start_time_dt}, End - {end_time_dt}")
 
     if chapter_url:
         summary = f"Reading Chapter of {manga_title}"
         description = f"Read the chapter here: {chapter_url}"
-        target_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
-        print(f"Scheduling to open chapter URL at {target_time}")
-        open_chapter(chapter_url, target_time)
+        print(f"Scheduling to open chapter URL at {start_time_dt}")
+        open_chapter(chapter_url, start_time_dt)
     else:
         manga_info = search_manga(manga_title)
         if "message" in manga_info:
@@ -111,11 +115,12 @@ def add_mangadex_chapter(
         summary = f"New Chapter of {manga_info['title']} Available!"
         chapter_url = chapter_info['chapter_url']
         description = f"Read the latest chapter here: {chapter_url}"
-        target_time = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
-        print(f"Scheduling to open latest chapter URL at {target_time}")
-        open_chapter(chapter_url, target_time)
+        print(f"Scheduling to open latest chapter URL at {start_time_dt}")
+        open_chapter(chapter_url, start_time_dt)
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
+    print(f"Google Calendar Event Created: {event}")
+
     return {
         "message": "Manga chapter event handled successfully.",
         "event": event,

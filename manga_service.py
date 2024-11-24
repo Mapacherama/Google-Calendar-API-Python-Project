@@ -37,12 +37,13 @@ def get_latest_manga_chapter(manga_id: str):
 
 
 def wait_until(target_time):
-    now = datetime.now(timezone('Europe/Amsterdam'))  
+    now = datetime.now(timezone('Europe/Amsterdam'))
     wait_seconds = (target_time - now).total_seconds()
     if wait_seconds > 0:
         print(f"Waiting for {wait_seconds:.2f} seconds to open the chapter...")
         time.sleep(wait_seconds)
-
+    else:
+        print("Target time has already passed. Opening immediately.")
 
 def open_chapter(chapter_url, target_time):
     now = datetime.now(timezone('Europe/Amsterdam'))
@@ -55,12 +56,11 @@ def open_chapter(chapter_url, target_time):
 
 
 def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: str, reminder_minutes: int, chapter_url: str = None):
+    start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
+
     if chapter_url:
         summary = f"Reading Chapter of {manga_title}"
         description = f"Read the chapter here: {chapter_url}"
-
-        start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
-
         print(f"Scheduling to open chapter URL at {start_time_dt}.")
         wait_until(start_time_dt)
         open_chapter(chapter_url, start_time_dt)
@@ -76,9 +76,6 @@ def add_manga_chapter_to_calendar(manga_title: str, start_time: str, end_time: s
         summary = f"New Chapter of {manga_info['title']} Available!"
         chapter_url = chapter_info["chapter_url"]
         description = f"Read the latest chapter here: {chapter_url}"
-
-        start_time_dt = datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S%z')
-
         print(f"Scheduling to open chapter URL at {start_time_dt}.")
         wait_until(start_time_dt)
         open_chapter(chapter_url, start_time_dt)
