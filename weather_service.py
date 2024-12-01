@@ -2,7 +2,6 @@ from fastapi import HTTPException
 import requests
 import os
 
-
 def fetch_weather(city: str):
     api_key = os.getenv("WEATHER_API_KEY")
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"

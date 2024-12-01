@@ -19,6 +19,7 @@ from movie_service import fetch_movie_recommendation
 from notification_service import send_sms_notification
 from spotify_service import notify_spotify_playback
 from utils import convert_timestamp_to_iso
+from weather_service import fetch_weather
 
 app = FastAPI()
 
@@ -300,6 +301,36 @@ def schedule_movie_session(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/schedule-running-event", summary="Schedule Running Event", tags=["Fitness", "Calendar"])
+def schedule_running_event(
+    city: str,
+    start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%S%z'),
+    reminder_minutes: int = 10,
+):
+    try:
+        weather = fetch_weather(city)
+        weather_details = (
+            f"Weather during your run: {weather['temperature']}°C, {weather['weather']}. "
+            f"Humidity: {weather['humidity']}%. Wind Speed: {weather['wind_speed']} m/s."
+        )
+
+        summary = "Running Session"
+        description = f"Running in {city}. {weather_details}"
+
+        event = create_event(summary, description, start_time, end_time, reminder_minutes)
+
+        return {
+            "message": "Running event scheduled successfully!",
+            "event": event,
+            "weather": weather
+        }
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to schedule running event: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn
