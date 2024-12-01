@@ -1,6 +1,9 @@
+from dotenv import load_dotenv
 from fastapi import HTTPException
 import requests
 import os
+
+load_dotenv()
 
 def fetch_weather(city: str):
     api_key = os.getenv("WEATHER_API_KEY")
