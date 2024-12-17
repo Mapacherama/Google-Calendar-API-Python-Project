@@ -41,6 +41,37 @@ def schedule_event(
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return {"message": "Event created", "event": event}
 
+@app.get("/recommendations", summary="AI-Driven Personalized Recommendations", tags=["Recommendations"])
+def get_recommendations(
+    user_id: Optional[str] = None, 
+    num_suggestions: int = 3
+):
+    """
+    Generate personalized event, playlist, and video recommendations.
+    """
+    try:
+        # Fetch historical events from the calendar
+        historical_events = list_upcoming_events()
+
+        # Generate Event Suggestions
+        suggested_events = Utils.generate_event_suggestions(historical_events, num_suggestions)
+
+        # Recommend Spotify Playlists
+        spotify_playlists = Utils.recommend_spotify_playlists(historical_events, num_suggestions)
+
+        # Recommend YouTube Videos
+        youtube_videos = Utils.recommend_youtube_videos(historical_events, num_suggestions)
+
+        return {
+            "message": "Personalized recommendations generated successfully.",
+            "suggested_events": suggested_events,
+            "spotify_playlists": spotify_playlists,
+            "youtube_videos": youtube_videos
+        }
+    except Exception as e:
+        logging.error(f"Failed to generate recommendations: {e}")
+        raise HTTPException(status_code=500, detail="Error generating recommendations.")
+
 @app.put("/update-event/{event_id}", summary="Update Event", tags=["Calendar"])
 def modify_event(
     event_id: str, 
