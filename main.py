@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from typing import Optional
 from anime_service import get_next_airing_episode
