@@ -19,7 +19,6 @@ from motivational_service import get_motivational_quote
 from movie_service import fetch_movie_recommendation
 from notification_service import send_sms_notification
 from spotify_service import notify_spotify_playback
-from utils import convert_timestamp_to_iso
 from weather_service import fetch_weather
 
 app = FastAPI()
@@ -72,6 +71,57 @@ def get_recommendations(
     except Exception as e:
         logging.error(f"Failed to generate recommendations: {e}")
         raise HTTPException(status_code=500, detail="Error generating recommendations.")
+    
+@app.post("/schedule-focus-blocks", summary="Schedule Focus Blocks", tags=["Productivity", "Calendar"])
+def schedule_focus_blocks(
+    num_blocks: int = 3, 
+    focus_duration: int = 90, 
+    break_duration: int = 10,
+    start_time: Optional[str] = None,
+    summary_prefix: str = "Focus Block"
+):
+    """
+    Schedule 90-minute focus blocks followed by 10-minute breaks.
+    Args:
+        - num_blocks: Number of focus blocks to create.
+        - focus_duration: Duration of each focus block (in minutes).
+        - break_duration: Duration of each break (in minutes).
+        - start_time: Optional start time (default is now).
+        - summary_prefix: Title prefix for focus events.
+    """
+    try:
+        # Default start time to now if not provided
+        current_time = datetime.now(timezone('Europe/Amsterdam')) if not start_time else datetime.strptime(
+            start_time, "%Y-%m-%dT%H:%M:%S%z"
+        )
+
+        events = []
+        for i in range(num_blocks):
+            # Schedule Focus Block
+            focus_start = current_time
+            focus_end = focus_start + timedelta(minutes=focus_duration)
+            focus_summary = f"{summary_prefix} {i+1}"
+            focus_event = create_event(focus_summary, "Deep work session", focus_start.isoformat(), focus_end.isoformat(), 10)
+            events.append(focus_event)
+
+            # Schedule Break
+            break_start = focus_end
+            break_end = break_start + timedelta(minutes=break_duration)
+            break_summary = f"Break {i+1}"
+            break_event = create_event(break_summary, "Take a short break", break_start.isoformat(), break_end.isoformat(), 5)
+            events.append(break_event)
+
+            # Update current time to after the break
+            current_time = break_end
+
+        return {
+            "message": f"{num_blocks} focus blocks scheduled successfully with breaks.",
+            "events": events
+        }
+    except Exception as e:
+        logging.error(f"Error scheduling focus blocks: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to schedule focus blocks.")
+
 
 @app.put("/update-event/{event_id}", summary="Update Event", tags=["Calendar"])
 def modify_event(
@@ -260,7 +310,7 @@ def add_anime_episode(
         if "message" in anime_info:
             return {"message": anime_info["message"]}
         
-        airing_date = convert_timestamp_to_iso(anime_info["airing_at"])
+        airing_date = Utils.convert_timestamp_to_iso(anime_info["airing_at"])
         start_time = start_time or airing_date
         end_time = end_time or (datetime.fromisoformat(start_time) + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%S")
 

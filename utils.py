@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Utils:
     @staticmethod
@@ -34,6 +34,9 @@ class Utils:
         ]
         return videos[:num_suggestions]
 
-
+    @staticmethod
     def convert_timestamp_to_iso(airing_at: int):
+        """
+        Convert a UNIX timestamp to ISO 8601 format.
+        """
         return datetime.fromtimestamp(airing_at).strftime("%Y-%m-%dT%H:%M:%S")
