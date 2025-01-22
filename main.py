@@ -17,7 +17,7 @@ from manga_service import get_latest_manga_chapter, open_chapter, search_manga
 from mindfulness_service import get_mindfulness_quote
 from motivational_service import get_motivational_quote
 from movie_service import fetch_movie_recommendation
-from notification_service import send_sms_notification
+# from notification_service import send_sms_notification
 from spotify_service import notify_spotify_playback
 from weather_service import fetch_weather
 
@@ -323,8 +323,8 @@ def add_anime_episode(
             print("Calling notify_spotify_playback for Anime Episode Event with track_uri:", track_uri)
             notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
         
-        sms_body = f"New Episode Alert: {summary} on {start_time}. Check your calendar for details."
-        send_sms_notification(sms_body)
+        # sms_body = f"New Episode Alert: {summary} on {start_time}. Check your calendar for details."
+        # send_sms_notification(sms_body)
 
         return {
             "message": "Anime episode event added and SMS notification sent.",
@@ -367,7 +367,7 @@ def schedule_movie_session(
             notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
         
         sms_body = f"Movie Recommendation: {movie['title']} - Check your calendar for details!"
-        send_sms_notification(sms_body)
+        # send_sms_notification(sms_body)
 
         return {
             "message": "Movie session scheduled successfully!",
