@@ -74,7 +74,7 @@ def get_recommendations(
         logging.error(f"Failed to generate recommendations: {e}")
         raise HTTPException(status_code=500, detail="Error generating recommendations.")
     
-@app.post("/schedule-focus-blocks", summary="Schedule Focus Blocks", tags=["Productivity", "Calendar"])
+@app.post("/schedule-focus-blocks", summary="Schedule Focus Blocks with AI Coaching", tags=["Productivity", "Calendar"])
 def schedule_focus_blocks(
     num_blocks: int = 3, 
     focus_duration: int = 90, 
@@ -84,6 +84,9 @@ def schedule_focus_blocks(
 ):
     """
     Schedule 90-minute focus blocks followed by 10-minute breaks.
+    
+    Now enhanced with AI-generated productivity coaching.
+    
     Args:
         - num_blocks: Number of focus blocks to create.
         - focus_duration: Duration of each focus block (in minutes).
@@ -98,12 +101,21 @@ def schedule_focus_blocks(
         )
 
         events = []
+        ai_coaching_tips = []
+
         for i in range(num_blocks):
+            # Generate AI productivity advice for this focus session
+            ai_tip = chat_with_gemini(
+                f"I'm about to start a {focus_duration}-minute deep work session. "
+                "Give me a quick productivity tip to maximize focus."
+            )
+            ai_coaching_tips.append(ai_tip)
+
             # Schedule Focus Block
             focus_start = current_time
             focus_end = focus_start + timedelta(minutes=focus_duration)
             focus_summary = f"{summary_prefix} {i+1}"
-            focus_event = create_event(focus_summary, "Deep work session", focus_start.isoformat(), focus_end.isoformat(), 10)
+            focus_event = create_event(focus_summary, ai_tip, focus_start.isoformat(), focus_end.isoformat(), 10)
             events.append(focus_event)
 
             # Schedule Break
@@ -117,8 +129,9 @@ def schedule_focus_blocks(
             current_time = break_end
 
         return {
-            "message": f"{num_blocks} focus blocks scheduled successfully with breaks.",
-            "events": events
+            "message": f"{num_blocks} focus blocks scheduled successfully with AI coaching.",
+            "events": events,
+            "ai_coaching_tips": ai_coaching_tips  # Include AI-generated deep work tips
         }
     except Exception as e:
         logging.error(f"Error scheduling focus blocks: {str(e)}")
