@@ -285,12 +285,22 @@ def schedule_motivational_event(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=30)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'), 
     reminder_minutes: int = 10,
-    track_uri: Optional[str] = None
+    track_uri: Optional[str] = None,
+    use_ai: bool = False
 ):
     print("Inside schedule_motivational_event")
     print("track_uri:", track_uri)  
     try:
-        quote = get_motivational_quote()
+        if use_ai:
+            quote = chat_with_gemini(
+                f"I'm about to start a high-energy motivational session and need a truly powerful quote from a legendary athlete. "
+                "The quote should ignite passion, resilience, and relentless pursuit of greatness—something that pushes me beyond limits" 
+                "and fuels my determination. Share a quote from a world-class athlete known for their mental toughness, "
+                "discipline, and drive to win, along with their name and a brief context about why it's impactful."
+            )
+            print("Gemini AI quote:", quote)
+        else:
+            quote = get_motivational_quote()
         
         if not description:
             description = f"Motivational Quote of the Day: {quote}"
@@ -342,7 +352,7 @@ def add_anime_episode(
         # send_sms_notification(sms_body)
 
         return {
-            "message": "Anime episode event added and SMS notification sent.",
+            "message": "Anime episode event added",
             "event": event,
             "episode_info": {
                 "title": anime_info['title'],
@@ -361,9 +371,10 @@ def schedule_movie_session(
     start_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=10)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: int = 10,
-    track_uri: Optional[str] = None
+    track_uri: Optional[str] = None,
 ):
     try:
+            
         start_date, end_date = Utils.parse_period(period)
         movie = fetch_movie_recommendation(genre=genre, rating=rating, period=(start_date, end_date))
         
