@@ -20,11 +20,13 @@ from movie_service import fetch_movie_recommendation
 # from notification_service import send_sms_notification
 from spotify_service import notify_spotify_playback
 from weather_service import fetch_weather
+from gemini_service import chat_with_gemini
 
 app = FastAPI()
 
 @app.get("/events", summary="List Upcoming Events", tags=["Calendar"])
 def get_upcoming_events():
+
     events = list_upcoming_events()
     if not events:
         return {"message": "No upcoming events found"}
@@ -412,7 +414,20 @@ def schedule_running_event(
         raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to schedule running event: {str(e)}")
-
+    
+@app.post("/ask-gemini", summary="Ask Google Gemini AI", tags=["AI"])
+def ask_gemini(user_input: str):
+    """
+    Endpoint to send a message to Google Gemini AI and receive a response.
+    
+    :param user_input: The message to ask Gemini AI
+    :return: AI-generated response
+    """
+    try:
+        response = chat_with_gemini(user_input)
+        return {"message": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
