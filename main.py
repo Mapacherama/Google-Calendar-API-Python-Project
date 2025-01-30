@@ -465,20 +465,6 @@ def schedule_running_event(
         raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to schedule running event: {str(e)}")
-    
-@app.post("/ask-gemini", summary="Ask Google Gemini AI", tags=["AI"])
-def ask_gemini(user_input: str):
-    """
-    Endpoint to send a message to Google Gemini AI and receive a response.
-    
-    :param user_input: The message to ask Gemini AI
-    :return: AI-generated response
-    """
-    try:
-        response = chat_with_gemini(user_input)
-        return {"message": response}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
