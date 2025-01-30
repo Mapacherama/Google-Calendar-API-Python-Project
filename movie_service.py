@@ -35,6 +35,39 @@ def get_movies_with_high_ratings(
         print(f"Failed to fetch movie data: {response.status_code}")
         return []
     
+import os
+import google.generativeai as genai
+
+# Load API Key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+def recommend_movie_with_ai(genre: str, rating: float, period: str):
+    """
+    Uses Gemini AI to recommend a movie based on the given parameters.
+
+    :param genre: Movie genre (e.g., "Action", "Comedy").
+    :param rating: Minimum rating (e.g., 7.0).
+    :param period: Time period for the movie (e.g., "1990s").
+    :return: A dictionary with movie details or a fallback recommendation.
+    """
+    prompt = (
+        f"Recommend a highly rated {genre} movie from the {period} with at least a {rating} IMDb rating. "
+        "Include the title, release year, and a short description."
+    )
+
+    try:
+        response = genai.GenerativeModel("gemini-pro").generate_content(prompt)
+        ai_text = response.text.strip()
+
+        # Parse AI response (adjust based on actual AI response structure)
+        movie = {"title": ai_text, "year": period, "rating": rating, "genre": genre}
+
+        return movie
+
+    except Exception as e:
+        print(f"AI recommendation failed: {str(e)}")
+        return {"title": "The Matrix", "year": 1999, "rating": 8.7, "genre": genre}  # Fallback movie    
+    
 def get_genre_id(genre_name):
     genre_map = {
         "Action": 28,

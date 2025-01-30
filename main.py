@@ -16,7 +16,7 @@ from historical_service import add_historical_event_to_calendar
 from manga_service import get_latest_manga_chapter, open_chapter, search_manga
 from mindfulness_service import get_mindfulness_quote
 from motivational_service import get_motivational_quote
-from movie_service import fetch_movie_recommendation
+from movie_service import fetch_movie_recommendation, recommend_movie_with_ai
 # from notification_service import send_sms_notification
 from spotify_service import notify_spotify_playback
 from weather_service import fetch_weather
@@ -372,39 +372,66 @@ def schedule_movie_session(
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(hours=12)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: int = 10,
     track_uri: Optional[str] = None,
+    use_ai: bool = False
 ):
     try:
             
         start_date, end_date = Utils.parse_period(period)
-        movie = fetch_movie_recommendation(genre=genre, rating=rating, period=(start_date, end_date))
+        if use_ai:
+            movie = recommend_movie_with_ai(genre=genre, rating=rating, period=(start_date, end_date))
+        else:
+            movie = fetch_movie_recommendation(genre=genre, rating=rating, period=(start_date, end_date))
         
         print("Response from function:", movie)
+        print("title of the movie:", movie["title"])
         
         if not movie:
             return {"message": "No movie recommendation found. Try adjusting your filters!"}
         
-        summary = f"{movie['title']} ({movie['release_date'][:4]}) - {genre}"
-        description = f"Today's movie: {movie['title']} - Rating: {movie['vote_average']} | Enjoy some 'Brain' time!"
+        if use_ai:
+            # AI-generated movie format
+            title_part = movie["title"].split("\n")[0]
+            print("title_part:", title_part)
+            summary = f"{title_part} - {genre}"
+            description = f"Today's movie: {title_part} | {movie['title'].split('* Description: ')[-1]}"
+            print("Summary:", summary)
+            print("Description:", description)
+        else:
+            summary = f"{movie['title']} ({movie['release_date'][:4]}) - {genre}"
+            description = f"Today's movie: {movie['title']} - Rating: {movie['vote_average']} | Enjoy some 'Brain' time!"
         
         event = create_event(summary, description, start_time, end_time, reminder_minutes)
         
         if track_uri:
             print("Calling notify_spotify_playback for Movie Session with track_uri:", track_uri)
             notify_spotify_playback(track_uri=track_uri, play_before=reminder_minutes)
-        
-        sms_body = f"Movie Recommendation: {movie['title']} - Check your calendar for details!"
-        # send_sms_notification(sms_body)
+            
+        if use_ai:
+    # AI-generated movie handling
+            movie_title = movie["title"].split("\n")[0]  # Extract only the title
+            movie_year = movie.get("year", "Unknown Year")  # AI might not return a proper year
 
-        return {
+            return {
             "message": "Movie session scheduled successfully!",
             "event": event,
             "movie": {
-                "title": movie["title"],
-                "year": movie["release_date"][:4],
-                "rating": movie["vote_average"],
+                "title": movie_title,
+                "year": movie_year,
+                "rating": movie.get("rating", "N/A"),
                 "genre": genre
             }
-        }
+        }    
+        else:    
+            return {
+                "message": "Movie session scheduled successfully!",
+                "event": event,
+                "movie": {
+                    "title": movie["title"],
+                    "year": movie["release_date"][:4],
+                    "rating": movie["vote_average"],
+                    "genre": genre
+                }
+            }
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
