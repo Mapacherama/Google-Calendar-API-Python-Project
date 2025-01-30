@@ -51,8 +51,10 @@ def recommend_movie_with_ai(genre: str, rating: float, period: str):
     :return: A dictionary with movie details or a fallback recommendation.
     """
     prompt = (
-        f"Recommend a highly rated {genre} movie from the {period} with at least a {rating} IMDb rating. "
-        "Include the title, release year, and a short description."
+        f"Unearth a hidden gem from the {period}—a must-watch {genre} movie that might have been overshadowed by blockbusters but still holds a cult following or critical acclaim. "
+        f"The film should have at least a {rating} IMDb rating and deliver an unforgettable experience. "
+        "Provide the movie title, its release year, and a compelling reason why it's worth watching. "
+        "Highlight its unique qualities, whether it's an underrated performance, a visionary director, or an ahead-of-its-time storyline."
     )
 
     try:
