@@ -106,9 +106,15 @@ def schedule_focus_blocks(
         for i in range(num_blocks):
             # Generate AI productivity advice for this focus session
             ai_tip = chat_with_gemini(
-                f"I'm about to start a {focus_duration}-minute deep work session. "
-                "Give me a quick productivity tip to maximize focus."
+                f"I'm about to enter a {focus_duration}-minute deep work session, and I want to operate at peak efficiency. " 
+                    "Provide a highly effective productivity strategy that elite performers, world-class thinkers, "
+                    "and top entrepreneurs use to maximize focus, mental clarity, and execution. "
+                    "I dont want generic tips—I need something that will elevate my output to an elite level. "
+                    "Consider techniques from neuroscience, flow state optimization, high-performance habits, and time management mastery. "
+                    "Give me one precise, actionable strategy, backed by science or expert insights, "
+                    "that I can implement immediately to supercharge my focus and results."
             )
+            
             ai_coaching_tips.append(ai_tip)
 
             # Schedule Focus Block
