@@ -4,11 +4,10 @@ from googleapiclient.discovery import build
 from auth import authenticate_google_calendar
 from win10toast_click import ToastNotifier
 from typing import Optional
-import requests
-from datetime import datetime
 from dotenv import load_dotenv
 
 from notification_service import snooze_notification
+from gemini_service import chat_with_gemini  # Import AI helper
 
 load_dotenv()
 toaster = ToastNotifier()
@@ -16,6 +15,11 @@ toaster = ToastNotifier()
 def get_calendar_service():
     creds = authenticate_google_calendar()
     return build('calendar', 'v3', credentials=creds)
+
+def generate_event_description(event_type, context=""):
+    """Generate an event description using Gemini AI."""
+    prompt = f"Generate a professional event description for a {event_type}. Context: {context}"
+    return chat_with_gemini(prompt)
 
 def list_upcoming_events():
     service = get_calendar_service()

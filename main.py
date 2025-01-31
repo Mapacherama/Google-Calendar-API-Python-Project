@@ -465,6 +465,8 @@ def schedule_running_event(
         raise http_exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to schedule running event: {str(e)}")
+    
+
 
 if __name__ == "__main__":
     import uvicorn
