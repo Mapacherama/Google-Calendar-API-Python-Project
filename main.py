@@ -166,10 +166,11 @@ def add_historical_event(
     end_time: str = (datetime.now(timezone('Europe/Amsterdam')) + timedelta(minutes=90)).strftime('%Y-%m-%dT%H:%M:%S%z'),
     reminder_minutes: Optional[int] = 10,
     random_fact: bool = False,
-    reminder_track_uri: Optional[str] = None
+    reminder_track_uri: Optional[str] = None,
+    use_ai: bool = False
 ):
     try:
-        event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact)
+        event = add_historical_event_to_calendar(start_time, end_time, reminder_minutes, random_fact, use_ai)
         
         if reminder_track_uri:
             print("Calling notify_spotify_playback for reminder with track_uri:", reminder_track_uri)

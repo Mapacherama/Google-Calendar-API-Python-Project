@@ -4,8 +4,9 @@ from random import randint
 import requests
 
 from calendar_service import create_event
+from gemini_service import chat_with_gemini
 
-def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool = False):
+def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_minutes: int, random_fact: bool = False, use_ai: bool = False):
     if random_fact:
         month = randint(1, 12)
         day = randint(1, 28)
@@ -30,6 +31,14 @@ def add_historical_event_to_calendar(start_time: str, end_time: str, reminder_mi
     
     summary = f"Historical Event on {selected_date}: {event_text} ({year})"
     description = f"This event happened on {selected_date} in {year}: {event_text}"
+    
+    if use_ai:
+        ai_prompt = f"""
+        Provide a detailed and engaging summary of the historical event: "{event_text}" that occurred in {year}.
+        Add interesting context, global impact, and why it still matters today. Make it compelling and insightful.
+        """
+        ai_description = chat_with_gemini(ai_prompt)
+        description += f"\n\n💡 AI Insight: {ai_description}"
 
     event = create_event(summary, description, start_time, end_time, reminder_minutes)
     return event
