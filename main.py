@@ -473,8 +473,6 @@ def schedule_running_event(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to schedule running event: {str(e)}")
     
-
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=7000, reload=True)
